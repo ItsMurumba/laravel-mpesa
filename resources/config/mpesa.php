@@ -19,6 +19,12 @@ return [
      */
     'callBackURL' => getenv('MPESA_CALLBACK_URL'),
 
+    /**
+     * BaseURL
+     * Base URL for Mpesa API Calls
+     */
+    'baseUrl' => getenv('MPESA_BASE_URL'),
+
 
 ];
 

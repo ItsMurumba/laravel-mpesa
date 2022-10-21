@@ -1,0 +1,19 @@
+{
+    "name": "itsmurumba/laravel-mpesa",
+    "description": "Laravel Package for Mpesa Daraja API",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Itsmurumba\\Mpesa\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Kelvin Murumba",
+            "email": "kevmurumba@gmail.com"
+        }
+    ],
+    "require": {
+        "guzzlehttp/guzzle": "^7.0.1"
+    }
+}
