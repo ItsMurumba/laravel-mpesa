@@ -25,11 +25,9 @@ return [
      */
     'baseUrl' => getenv('MPESA_BASE_URL'),
 
+    /**
+     * Paybill Number
+     */
+    'paybillNumber' => getenv('MPESA_PAYBILL_NUMBER'),
 
 ];
-
-
-
-
-
-
