@@ -73,6 +73,16 @@ class Mpesa
      */
     protected $lipaNaMpesaPasskey;
 
+    /**
+     * C2B Confirmation URL
+     */
+    protected $c2bConfirmationURL;
+
+    /**
+     * C2B Validation URL
+     */
+    protected $c2bvalidationURL;
+
 
 
     public function __construct()
@@ -85,6 +95,8 @@ class Mpesa
         $this->setCallBackURL();
         $this->setLipaNaMpesaCallbackURL();
         $this->setLipaNaMpesaPasskey();
+        $this->setC2BConfirmationURL();
+        $this->setC2BValidationURL();
         $this->setRequestOptions();
     }
 
@@ -156,6 +168,30 @@ class Mpesa
     public function setLipaNaMpesaPasskey()
     {
         $this->lipaNaMpesaPasskey = Config::get('mpesa.lipaNaMpesaPasskey');
+    }
+
+    /**
+     * Get  C2B Confirmation URL from Mpesa config file
+     * This is the URL that receives the confirmation request from API upon payment completion.
+     *
+     * @return void
+     */
+    public function setC2BConfirmationURL()
+    {
+        $this->c2BConfirmationURL = Config::get('mpesa.c2bConfirmationURL');
+    }
+
+    /**
+     * Get C2B validation URL from Mpesa config file
+     * This is the URL that receives the validation request from API upon payment submission.
+     * The validation URL is only called if the external validation on the registered shortcode is enabled.
+     * (By default External Validation is dissabled)
+     *
+     * @return void
+     */
+    public function setC2BValidationURL()
+    {
+        $this->c2bValidationURL = Config::get('mpesa.c2bValidationURL');
     }
 
     /**
@@ -253,6 +289,26 @@ class Mpesa
         );
 
         $response = $this->setHttpResponse('/mpesa/stkpush/v1/processrequest', 'POST', $arrayData);
+
+        return $response;
+    }
+
+    /**
+     * Customer To Business Register URL:
+     * Register validation and confirmation URLs on M-Pesa
+     *
+     * @return void
+     */
+    public function c2bRegisterURLs()
+    {
+        $arrayData = array(
+            "ShortCode" => $this->payBillNumber,
+            "ResponseType" => "Completed",
+            "ConfirmationURL" => $this->c2bConfirmationURL,
+            "ValidationURL" => $this->c2bvalidationURL
+        );
+
+        $response = $this->setHttpResponse('/mpesa/c2b/v1/registerurl', 'POST', $arrayData);
 
         return $response;
     }

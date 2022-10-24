@@ -45,4 +45,14 @@ return [
      */
     'lipaNaMpesaPasskey' => getenv('LIPA_NA_MPESA_PASSKEY'),
 
+    /**
+     * C2B Confirmation URL
+     */
+    'c2bConfirmationURL' => getenv('MPESA_C2B_CONFIRMATION_URL'),
+
+    /**
+     * C2B Validation URL
+     */
+    'c2bValidationURL' => getenv('MPESA_C2B_VALIDATION_URL'),
+
 ];
