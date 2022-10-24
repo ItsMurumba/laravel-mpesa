@@ -58,6 +58,21 @@ class Mpesa
      */
     protected $expiresIn;
 
+    /**
+     * Lipa na Mpesa Shortcode
+     */
+    protected $lipaNaMpesaShortcode;
+
+    /**
+     * Lipa na Mpesa Callback URL
+     */
+    protected $lipaNaMpesaCallbackURL;
+
+    /**
+     * Lipa na Mpesa Passkey
+     */
+    protected $lipaNaMpesaPasskey;
+
 
 
     public function __construct()
@@ -66,7 +81,10 @@ class Mpesa
         $this->setConsumerSecret();
         $this->setBaseUrl();
         $this->setPayBillNumber();
+        $this->setLipaNaMpesaShortcode();
         $this->setCallBackURL();
+        $this->setLipaNaMpesaCallbackURL();
+        $this->setLipaNaMpesaPasskey();
         $this->setRequestOptions();
     }
 
@@ -108,6 +126,36 @@ class Mpesa
     public function setCallBackURL()
     {
         $this->callBackURL = Config::get('mpesa.callBackURL');
+    }
+
+    /**
+     * Get Lipa Na Mpesa Paybill or buygoods from Mpesa config file
+     *
+     * @return void
+     */
+    public function setLipaNaMpesaShortcode()
+    {
+        $this->lipaNaMpesaShortcode = Config::get('mpesa.lipaNaMpesaShortcode');
+    }
+
+    /**
+     * Get the Lipa Na Mpesa Callback URL from Mpesa config file
+     *
+     * @return void
+     */
+    public function setLipaNaMpesaCallbackURL()
+    {
+        $this->lipaNaMpesaCallbackURL = Config::get('mpesa.lipaNaMpesaCallbackURL');
+    }
+
+    /**
+     * Get the Lipa Na Mpesa Passkey from Mpesa config file
+     *
+     * @return void
+     */
+    public function setLipaNaMpesaPasskey()
+    {
+        $this->lipaNaMpesaPasskey = Config::get('mpesa.lipaNaMpesaPasskey');
     }
 
     /**
@@ -177,7 +225,35 @@ class Mpesa
         }
     }
 
-    public function express()
+    /**
+     * Mpesa Express: Initiates online payment on behalf of a customer.
+     *
+     * @param [type] $amount
+     * @param [type] $phoneNumber
+     * @param string $accountReference
+     * @param string $transactionDescription
+     * @return void
+     */
+    public function express($amount, $phoneNumber, $accountReference = 'CompanyXLTD', $transactionDescription = 'Payment of X')
     {
+        $timestamp = date('YmdHis');
+
+        $arrayData = array(
+            "BusinessShortCode" => $this->lipaNaMpesaShortcode,
+            "Password"  => base64_encode($this->lipaNaMpesaShortcode . $this->lipaNaMpesaPasskey . $timestamp),
+            "Timestamp"  => $timestamp,
+            "TransactionType"  => "CustomerPayBillOnline",
+            "Amount"  => $amount,
+            "PartyA"  => $phoneNumber,
+            "PartyB"  => $this->lipaNaMpesaShortcode,
+            "PhoneNumber"  => $phoneNumber,
+            "CallBackURL"  => $this->lipaNaMpesaCallbackURL,
+            "AccountReference"  => $accountReference,
+            "TransactionDesc"  => $transactionDescription
+        );
+
+        $response = $this->setHttpResponse('/mpesa/stkpush/v1/processrequest', 'POST', $arrayData);
+
+        return $response;
     }
 }

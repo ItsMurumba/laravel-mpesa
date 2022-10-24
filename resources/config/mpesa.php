@@ -30,4 +30,19 @@ return [
      */
     'paybillNumber' => getenv('MPESA_PAYBILL_NUMBER'),
 
+    /**
+     * Lipa na Mpesa Shortcode (Paybill or Till Number)
+     */
+    'lipaNaMpesaShortcode' => getenv('LIPA_NA_MPESA_SHORTCODE'),
+
+    /**
+     * Lipa na Mpesa Callback URL
+     */
+    'lipaNaMpesaCallbackURL' => getenv('LIPA_NA_MPESA_CALLBACK_URL'),
+
+    /**
+     * Lipa na Mpesa Passkey
+     */
+    'lipaNaMpesaPasskey' => getenv('LIPA_NA_MPESA_PASSKEY'),
+
 ];
