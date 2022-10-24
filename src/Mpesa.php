@@ -312,4 +312,28 @@ class Mpesa
 
         return $response;
     }
+
+    /**
+     * Customer To Business Simulate:
+     * Make payment requests from Client to Business (C2B)
+     *
+     * @param [type] $amount
+     * @param [type] $phoneNumber
+     * @param [type] $billRefNumber
+     * @return void
+     */
+    public function c2bSimulation($amount, $phoneNumber, $billRefNumber)
+    {
+        $arrayData = array(
+            "ShortCode" => $this->lipaNaMpesaShortcode,
+            "CommandID" => "CustomerPayBillOnline",
+            "amount" => $amount,
+            "MSISDN" => $phoneNumber,
+            "BillRefNumber" => $billRefNumber,
+        );
+
+        $response = $this->setHttpResponse('/mpesa/c2b/v1/simulate', 'POST', $arrayData);
+
+        return $response;
+    }
 }
