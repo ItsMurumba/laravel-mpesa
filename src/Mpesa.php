@@ -4,6 +4,7 @@ namespace Itsmurumba\Mpesa;
 
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Http;
 use Itsmurumba\Mpesa\Exceptions\IsNullException;
 
 class Mpesa
@@ -44,6 +45,18 @@ class Mpesa
      * CallBackURL
      */
     protected $callbackUrl;
+
+    /**
+     * Access token from Mpesa for authentication in subsequent requests
+     */
+    protected $accessToken;
+
+    /**
+     * Expiry time for the access token
+     *
+     * @var [type]
+     */
+    protected $expiresIn;
 
 
 
@@ -102,7 +115,14 @@ class Mpesa
      */
     private function setRequestOptions()
     {
-        $authBearer = 'Bearer ' . base64_encode($this->consumerKey . ':' . $this->consumerSecret);
+
+        if (isset($this->accessToken) && strtotime($this->expiresIn) > time()) {
+            $accessToken = $this->accessToken;
+        } else {
+            $accessToken = $this->getAccessToken();
+        }
+
+        $authBearer = 'Bearer ' . $accessToken;
 
         $this->client = new Client(
             [
@@ -143,8 +163,21 @@ class Mpesa
      */
     private function getAccessToken()
     {
-        $accessTokeResponse = $this->setHttpResponse('/oauth/v1/generate?grant_type=client_credentials', 'GET', null);
+        $response = Http::withToken(base64_encode($this->consumerKey . ':' . $this->consumerSecret))
+            ->get($this->baseUrl . '/oauth/v1/generate?grant_type=client_credentials');
 
-        return $accessTokeResponse;
+        if ($response->status() == 200) {
+
+            $this->expiresIn =  date('Y-m-d H:i:s', (time() + $response->expires_in));
+            $this->accessToken = $response->access_token;
+
+            return $response->access_token;
+        } else {
+            return false;
+        }
+    }
+
+    public function express()
+    {
     }
 }
