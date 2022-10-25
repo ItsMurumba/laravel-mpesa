@@ -83,6 +83,16 @@ class Mpesa
      */
     protected $c2bvalidationURL;
 
+    /**
+     *  B2C Initiator Username
+     */
+    protected $b2cInitiatorUsername;
+
+    /**
+     * B2C Initiator Password
+     */
+    protected $b2cInitiatorPassword;
+
 
 
     public function __construct()
@@ -97,6 +107,8 @@ class Mpesa
         $this->setLipaNaMpesaPasskey();
         $this->setC2BConfirmationURL();
         $this->setC2BValidationURL();
+        $this->setB2CInitiatorUsername();
+        $this->setB2CInitiatorPassword();
         $this->setRequestOptions();
     }
 
@@ -192,6 +204,26 @@ class Mpesa
     public function setC2BValidationURL()
     {
         $this->c2bValidationURL = Config::get('mpesa.c2bValidationURL');
+    }
+
+    /**
+     * Get the username of the Mpesa B2C account API operator from Mpesa config file
+     *
+     * @return void
+     */
+    private function setB2CInitiatorUsername()
+    {
+        $this->b2cInitiatorUsername = Config::get('mpesa.b2cInitiatorUsername');
+    }
+
+    /**
+     * Get the Password of the Mpesa B2C account API operator from Mpesa config file
+     *
+     * @return void
+     */
+    private function setB2CInitiatorPassword()
+    {
+        $this->b2cInitiatorPassword = Config::get('mpesa.b2cInitiatorPassword');
     }
 
     /**
