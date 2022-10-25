@@ -294,6 +294,29 @@ class Mpesa
     }
 
     /**
+     * M-Pesa Express Query:
+     * Check the status of a Lipa Na M-Pesa Online Payment.
+     *
+     * @param [type] $checkoutRequestId
+     * @return void
+     */
+    public function expressQuery($checkoutRequestId)
+    {
+        $timestamp = date('YmdHis');
+
+        $arrayData = array(
+            "BusinessShortCode" => $this->lipaNaMpesaShortcode,
+            "Password" => base64_encode($this->lipaNaMpesaShortcode . $this->lipaNaMpesaPasskey . $timestamp),
+            "Timestamp" => $timestamp,
+            "CheckoutRequestID" => $checkoutRequestId
+        );
+
+        $response = $this->setHttpResponse('/mpesa/stkpushquery/v1/query', 'POST', $arrayData);
+
+        return $response;
+    }
+
+    /**
      * Customer To Business Register URL:
      * Register validation and confirmation URLs on M-Pesa
      *
