@@ -529,4 +529,30 @@ class Mpesa
 
         return $response;
     }
+
+    /**
+     * Account Balance:
+     * Enquire the balance on an M-Pesa BuyGoods (Till Number)
+     *
+     * @param [type] $identifierType
+     * @param [type] $remarks
+     * @return void
+     */
+    public function accountBalance($identifierType, $remarks)
+    {
+        $arrayData = array(
+            "Initiator" => $this->initiatorUsername,
+            "SecurityCredential" => $this->setSecurityCredentials(),
+            "CommandID" => 'AccountBalance',
+            "PartyA" => $this->lipaNaMpesaShortcode,
+            "IdentifierType" => $identifierType,
+            "ResultURL" => $this->resultURL,
+            "QueueTimeOutURL" => $this->queueTimeOutURL,
+            "Remarks" => $remarks
+        );
+
+        $response = $this->setHttpResponse('/mpesa/accountbalance/v1/query', 'POST', $arrayData);
+
+        return $response;
+    }
 }
