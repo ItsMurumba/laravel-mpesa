@@ -99,6 +99,19 @@ class Mpesa
      */
     protected $environment;
 
+    /**
+     * This is the URL to be specified in your request that will be used
+     * by API Proxy to send notification incase the payment
+     * request is timed out while awaiting processing in the queue.
+     */
+    protected $queueTimeOutURL;
+
+    /**
+     * This is the URL to be specified in your request that will be used
+     * by M-Pesa to send notification upon processing of the payment request.
+     */
+    protected $resultURL;
+
 
 
     public function __construct()
@@ -116,6 +129,8 @@ class Mpesa
         $this->setInitiatorUsername();
         $this->setInitiatorPassword();
         $this->setEnvironment();
+        $this->setQueueTimeOutURL();
+        $this->setResultURL();
         $this->setRequestOptions();
     }
 
@@ -241,6 +256,26 @@ class Mpesa
     public function setEnvironment()
     {
         $this->environment = Config::get('mpesa.environment');
+    }
+
+    /**
+     * Get the QueueTimeOutURL from Mpesa config file
+     *
+     * @return void
+     */
+    public function setQueueTimeOutURL()
+    {
+        $this->queueTimeOutURL = Config::get('mpesa.queueTimeOutURL');
+    }
+
+    /**
+     * Get the ResultURL from Mpesa config file
+     *
+     * @return void
+     */
+    public function setResultURL()
+    {
+        $this->resultURL = Config::get('mpesa.resultURL');
     }
 
     /**
@@ -429,6 +464,37 @@ class Mpesa
         );
 
         $response = $this->setHttpResponse('/mpesa/c2b/v1/simulate', 'POST', $arrayData);
+
+        return $response;
+    }
+
+    /**
+     * Business To Customer (B2C):
+     * Transact between an M-Pesa short code to a phone number registered on M-Pesa
+     *
+     * @param [type] $commandId
+     * @param [type] $amount
+     * @param [type] $phoneNumber
+     * @param [type] $remarks
+     * @param string $occassion
+     * @return void
+     */
+    public function b2c($commandId, $amount, $phoneNumber, $remarks, $occassion = '')
+    {
+        $arrayData = array(
+            "InitiatorName" => $this->initiatorUsername,
+            "SecurityCredential" => $this->setSecurityCredentials(),
+            "CommandID" => $commandId,
+            "Amount" => $amount,
+            "PartyA" => $this->lipaNaMpesaShortcode,
+            "PartyB" => $phoneNumber,
+            "Remarks" => $remarks,
+            "QueueTimeOutURL" => $this->queueTimeOutURL,
+            "ResultURL" => $this->resultURL,
+            "Occassion" => $occassion
+        );
+
+        $response = $this->setHttpResponse('/mpesa/b2c/v1/paymentrequest', 'POST', $arrayData);
 
         return $response;
     }

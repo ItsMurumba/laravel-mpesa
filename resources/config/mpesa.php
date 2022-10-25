@@ -70,4 +70,14 @@ return [
      */
     'environment' => getenv('MPESA_ENVIRONMENT'),
 
+    /**
+     * QueueTimeOutURL
+     */
+    'queueTimeOutURL' => getenv('MPESA_QUEUE_TIMEOUT_URL'),
+
+    /**
+     * ResultURL
+     */
+    'resultURL' => getenv('MPESA_RESULT_URL'),
+
 ];
