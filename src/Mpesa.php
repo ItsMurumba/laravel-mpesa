@@ -510,12 +510,12 @@ class Mpesa
      * @param string $occassion
      * @return void
      */
-    public function transactionStatus($commandId, $transactionId, $identifierType, $remarks, $occassion = '')
+    public function transactionStatus($transactionId, $identifierType, $remarks, $occassion = '')
     {
         $arrayData = array(
             "Initiator" => $this->initiatorUsername,
             "SecurityCredential" => $this->setSecurityCredentials(),
-            "CommandID" => $commandId,
+            "CommandID" => 'TransactionStatusQuery',
             "TransactionID" => $transactionId,
             "PartyA" => $this->lipaNaMpesaShortcode,
             "IdentifierType" => $identifierType,
