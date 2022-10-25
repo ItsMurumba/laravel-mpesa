@@ -4,6 +4,7 @@ namespace Itsmurumba\Mpesa;
 
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Itsmurumba\Mpesa\Exceptions\IsNullException;
 
@@ -86,12 +87,17 @@ class Mpesa
     /**
      *  B2C Initiator Username
      */
-    protected $b2cInitiatorUsername;
+    protected $initiatorUsername;
 
     /**
      * B2C Initiator Password
      */
-    protected $b2cInitiatorPassword;
+    protected $initiatorPassword;
+
+    /**
+     * Get the active environment
+     */
+    protected $environment;
 
 
 
@@ -107,8 +113,9 @@ class Mpesa
         $this->setLipaNaMpesaPasskey();
         $this->setC2BConfirmationURL();
         $this->setC2BValidationURL();
-        $this->setB2CInitiatorUsername();
-        $this->setB2CInitiatorPassword();
+        $this->setInitiatorUsername();
+        $this->setInitiatorPassword();
+        $this->setEnvironment();
         $this->setRequestOptions();
     }
 
@@ -211,9 +218,9 @@ class Mpesa
      *
      * @return void
      */
-    private function setB2CInitiatorUsername()
+    private function setInitiatorUsername()
     {
-        $this->b2cInitiatorUsername = Config::get('mpesa.b2cInitiatorUsername');
+        $this->initiatorUsername = Config::get('mpesa.initiatorUsername');
     }
 
     /**
@@ -221,9 +228,19 @@ class Mpesa
      *
      * @return void
      */
-    private function setB2CInitiatorPassword()
+    private function setInitiatorPassword()
     {
-        $this->b2cInitiatorPassword = Config::get('mpesa.b2cInitiatorPassword');
+        $this->initiatorPassword = Config::get('mpesa.initiatorPassword');
+    }
+
+    /**
+     * Get the set environment from Mpesa config file
+     *
+     * @return void
+     */
+    public function setEnvironment()
+    {
+        $this->environment = Config::get('mpesa.environment');
     }
 
     /**
@@ -291,6 +308,30 @@ class Mpesa
         } else {
             return false;
         }
+    }
+
+    /**
+     * Encryption of Security credentials to be used in the following API calls:
+     * B2C
+     * B2B
+     * Transaction Status Query API
+     * Reversal API
+     *
+     * @return void
+     */
+    private function setSecurityCredentials()
+    {
+        if ($this->environment == 'production') {
+            $publicKey = File::get(__DIR__ . '/certificates/production.cer');
+        } else {
+            $publicKey = File::get(__DIR__ . '/certificates/sandbox.cer');
+        }
+
+        openssl_public_encrypt($this->initiatorPassword, $encryptedData, $publicKey, OPENSSL_PKCS1_PADDING);
+
+        $securityCredential = base64_encode($encryptedData);
+
+        return $securityCredential;
     }
 
     /**

@@ -55,4 +55,19 @@ return [
      */
     'c2bValidationURL' => getenv('MPESA_C2B_VALIDATION_URL'),
 
+    /**
+     * Mpesa Initiator Username
+     */
+    'initiatorUsername' => getenv('MPESA_INITIATOR_USERNAME'),
+
+    /**
+     * Mpesa Initiator Password
+     */
+    'initiatorPassword' => getenv('MPESA_INITIATOR_PASSWORD'),
+
+    /**
+     * Environment
+     */
+    'environment' => getenv('MPESA_ENVIRONMENT'),
+
 ];
