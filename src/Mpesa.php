@@ -498,4 +498,35 @@ class Mpesa
 
         return $response;
     }
+
+    /**
+     * Transaction Status:
+     * Check the status of a transaction
+     *
+     * @param [type] $commandId
+     * @param [type] $transactionId
+     * @param [type] $identifierType
+     * @param [type] $remarks
+     * @param string $occassion
+     * @return void
+     */
+    public function transactionStatus($commandId, $transactionId, $identifierType, $remarks, $occassion = '')
+    {
+        $arrayData = array(
+            "Initiator" => $this->initiatorUsername,
+            "SecurityCredential" => $this->setSecurityCredentials(),
+            "CommandID" => $commandId,
+            "TransactionID" => $transactionId,
+            "PartyA" => $this->lipaNaMpesaShortcode,
+            "IdentifierType" => $identifierType,
+            "ResultURL" => $this->resultURL,
+            "QueueTimeOutURL" => $this->queueTimeOutURL,
+            "Remarks" => $remarks,
+            "Occassion" => $occassion
+        );
+
+        $response = $this->setHttpResponse('/mpesa/transactionstatus/v1/query', 'POST', $arrayData);
+
+        return $response;
+    }
 }
