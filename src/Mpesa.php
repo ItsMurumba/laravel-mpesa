@@ -555,4 +555,37 @@ class Mpesa
 
         return $response;
     }
+
+    /**
+     * Reversals:
+     * Reverses an M-Pesa transaction.
+     *
+     * @param [type] $transactionId
+     * @param [type] $amount
+     * @param [type] $receiverParty
+     * @param [type] $receiverIdentifierType
+     * @param [type] $remarks
+     * @param string $occasion
+     * @return void
+     */
+    public function reversals($transactionId, $amount, $receiverParty, $receiverIdentifierType, $remarks, $occasion = '')
+    {
+        $arrayData = array(
+            "Initiator" => $this->initiatorUsername,
+            "SecurityCredential" => $this->setSecurityCredentials(),
+            "CommandID" => 'TransactionReversal',
+            "TransactionID" => $transactionId,
+            "Amount" => $amount,
+            "ReceiverParty" => $receiverParty,
+            "ReceiverIdentifierType" => $receiverIdentifierType,
+            "ResultURL" => $this->resultURL,
+            "QueueTimeOutURL" => $this->queueTimeOutURL,
+            "Remarks" => $remarks,
+            "Occasion" => $occasion
+        );
+
+        $response = $this->setHttpResponse('/mpesa/reversal/v1/request', 'POST', $arrayData);
+
+        return $response;
+    }
 }
