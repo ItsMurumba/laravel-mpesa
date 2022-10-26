@@ -588,4 +588,37 @@ class Mpesa
 
         return $response;
     }
+
+    /**
+     * The Business to Business (B2B) API:
+     * used to transfer money from one business to another business.
+     *
+     * @param [type] $commandId
+     * @param [type] $amount
+     * @param [type] $receiverShortcode
+     * @param [type] $accountReference
+     * @param [type] $remarks
+     * @return void
+     */
+    public function b2b($commandId, $amount, $receiverShortcode, $accountReference, $remarks)
+    {
+        $arrayData = array(
+            "InitiatorName" => $this->initiatorUsername,
+            "SecurityCredential" => $this->setSecurityCredentials(),
+            "CommandID" => $commandId,
+            "SenderIdentifierType" => "Shortcode",
+            "RecieverIdentifierType" => "Shortcode",
+            "Amount" => $amount,
+            "PartyA" => $this->lipaNaMpesaShortcode,
+            "PartyB" => $receiverShortcode,
+            "AccountReference" => $accountReference,
+            "Remarks" => $remarks,
+            "QueueTimeOutURL" => $this->queueTimeOutURL,
+            "ResultURL" => $this->resultURL,
+        );
+
+        $response = $this->setHttpResponse('/mpesa/b2b/v1/paymentrequest', 'POST', $arrayData);
+
+        return $response;
+    }
 }
