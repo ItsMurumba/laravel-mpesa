@@ -77,12 +77,12 @@ class Mpesa
     /**
      * C2B Confirmation URL
      */
-    protected $c2bConfirmationURL;
+    protected $confirmationURL;
 
     /**
      * C2B Validation URL
      */
-    protected $c2bvalidationURL;
+    protected $validationURL;
 
     /**
      *  B2C Initiator Username
@@ -124,8 +124,8 @@ class Mpesa
         $this->setCallBackURL();
         $this->setLipaNaMpesaCallbackURL();
         $this->setLipaNaMpesaPasskey();
-        $this->setC2BConfirmationURL();
-        $this->setC2BValidationURL();
+        $this->setConfirmationURL();
+        $this->setValidationURL();
         $this->setInitiatorUsername();
         $this->setInitiatorPassword();
         $this->setEnvironment();
@@ -210,22 +210,22 @@ class Mpesa
      *
      * @return void
      */
-    public function setC2BConfirmationURL()
+    public function setConfirmationURL()
     {
-        $this->c2BConfirmationURL = Config::get('mpesa.c2bConfirmationURL');
+        $this->confirmationURL = Config::get('mpesa.confirmationURL');
     }
 
     /**
-     * Get C2B validation URL from Mpesa config file
+     * Get validation URL from Mpesa config file
      * This is the URL that receives the validation request from API upon payment submission.
      * The validation URL is only called if the external validation on the registered shortcode is enabled.
      * (By default External Validation is dissabled)
      *
      * @return void
      */
-    public function setC2BValidationURL()
+    public function setValidationURL()
     {
-        $this->c2bValidationURL = Config::get('mpesa.c2bValidationURL');
+        $this->validationURL = Config::get('mpesa.validationURL');
     }
 
     /**
@@ -435,8 +435,8 @@ class Mpesa
         $arrayData = array(
             "ShortCode" => $this->payBillNumber,
             "ResponseType" => "Completed",
-            "ConfirmationURL" => $this->c2bConfirmationURL,
-            "ValidationURL" => $this->c2bvalidationURL
+            "ConfirmationURL" => $this->confirmationURL,
+            "ValidationURL" => $this->validationURL
         );
 
         $response = $this->setHttpResponse('/mpesa/c2b/v1/registerurl', 'POST', $arrayData);

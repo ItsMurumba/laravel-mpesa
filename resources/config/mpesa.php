@@ -48,12 +48,12 @@ return [
     /**
      * C2B Confirmation URL
      */
-    'c2bConfirmationURL' => getenv('MPESA_C2B_CONFIRMATION_URL'),
+    'confirmationURL' => getenv('MPESA_CONFIRMATION_URL'),
 
     /**
      * C2B Validation URL
      */
-    'c2bValidationURL' => getenv('MPESA_C2B_VALIDATION_URL'),
+    'validationURL' => getenv('MPESA_VALIDATION_URL'),
 
     /**
      * Mpesa Initiator Username
