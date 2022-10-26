@@ -23,7 +23,7 @@ return [
      * BaseURL
      * Base URL for Mpesa API Calls
      */
-    'baseUrl' => getenv('MPESA_BASE_URL'),
+    'baseUrl' => getenv('MPESA_BASE_URL', 'https://sandbox.safaricom.co.ke'),
 
     /**
      * Paybill Number
@@ -68,7 +68,7 @@ return [
     /**
      * Environment
      */
-    'environment' => getenv('MPESA_ENVIRONMENT'),
+    'environment' => getenv('MPESA_ENVIRONMENT', 'sandbox'),
 
     /**
      * QueueTimeOutURL
