@@ -331,10 +331,14 @@ class Mpesa
      */
     private function getAccessToken()
     {
-        $response = Http::withToken(base64_encode($this->consumerKey . ':' . $this->consumerSecret))
-            ->get($this->baseUrl . '/oauth/v1/generate?grant_type=client_credentials');
+        $response = Http::withHeaders([
+            'Authorization' => 'Basic ' . base64_encode($this->consumerKey . ':' . $this->consumerSecret),
+        ])->get(
+            $this->baseUrl . '/oauth/v1/generate?grant_type=client_credentials'
+        );
 
         if ($response->status() == 200) {
+            $response = json_decode($response);
 
             $this->expiresIn =  date('Y-m-d H:i:s', (time() + $response->expires_in));
             $this->accessToken = $response->access_token;
