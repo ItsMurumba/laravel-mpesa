@@ -311,19 +311,27 @@ class Mpesa
      * @param array $body
      * @return void
      */
-    private function setHttpResponse($relativeUrl, $method, $body = [])
+    private function setHttpResponse($relativeUrl, $method, $data)
     {
 
         if (is_null($method)) {
             throw new IsNullException("Empty method not allowed");
         }
 
-        $this->response = $this->client->{strtolower($method)}(
+        if (isset($this->accessToken) && strtotime($this->expiresIn) > time()) {
+            $accessToken = $this->accessToken;
+        } else {
+            $accessToken = $this->getAccessToken();
+        }
+
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $accessToken,
+        ])->post(
             $this->baseUrl . $relativeUrl,
-            ["body" => json_encode($body)]
+            $data
         );
 
-        return $this;
+        return $response;
     }
 
     /**
