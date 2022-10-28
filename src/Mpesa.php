@@ -390,7 +390,7 @@ class Mpesa
      * @param string $transactionDescription
      * @return void
      */
-    public function express($amount, $phoneNumber, $accountReference = 'CompanyXLTD', $transactionDescription = 'Payment of X')
+    public function expressPayment($amount, $phoneNumber, $accountReference = 'CompanyXLTD', $transactionDescription = 'Payment of X')
     {
         $timestamp = date('YmdHis');
 
@@ -420,7 +420,7 @@ class Mpesa
      * @param [type] $checkoutRequestId
      * @return void
      */
-    public function expressQuery($checkoutRequestId)
+    public function expressPaymentQuery($checkoutRequestId)
     {
         $timestamp = date('YmdHis');
 
