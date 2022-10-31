@@ -445,7 +445,7 @@ class Mpesa
     public function c2bRegisterURLs()
     {
         $arrayData = array(
-            "ShortCode" => $this->payBillNumber,
+            "ShortCode" => $this->lipaNaMpesaShortcode,
             "ResponseType" => "Completed",
             "ConfirmationURL" => $this->confirmationURL,
             "ValidationURL" => $this->validationURL
@@ -465,7 +465,7 @@ class Mpesa
      * @param [type] $billRefNumber
      * @return void
      */
-    public function c2bSimulation($amount, $phoneNumber, $billRefNumber)
+    public function c2bPayment($amount, $phoneNumber, $billRefNumber)
     {
         $arrayData = array(
             "ShortCode" => $this->lipaNaMpesaShortcode,
