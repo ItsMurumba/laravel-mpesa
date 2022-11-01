@@ -5,7 +5,7 @@ This is a Laravel package for Safaricom Mpesa Daraja API. It includes all public
 
 Laravel 5.5+ :
 ````
-composer install itsmurumba/laravel-mpesa
+composer require itsmurumba/laravel-mpesa
 ````
 
 Laravel =<5.4 :
