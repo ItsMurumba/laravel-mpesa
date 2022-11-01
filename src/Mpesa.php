@@ -491,7 +491,7 @@ class Mpesa
      * @param string $occassion
      * @return void
      */
-    public function b2c($commandId, $amount, $phoneNumber, $remarks, $occassion = '')
+    public function b2cPayment($commandId, $amount, $phoneNumber, $remarks, $occassion = '')
     {
         $arrayData = array(
             "InitiatorName" => $this->initiatorUsername,
@@ -612,7 +612,7 @@ class Mpesa
      * @param [type] $remarks
      * @return void
      */
-    public function b2b($commandId, $amount, $receiverShortcode, $accountReference, $remarks)
+    public function b2bPayment($commandId, $amount, $receiverShortcode, $accountReference, $remarks)
     {
         $arrayData = array(
             "InitiatorName" => $this->initiatorUsername,

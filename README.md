@@ -15,6 +15,8 @@ After running the composer install above, you should add a service provider and 
 ````
 Itsmurumba\Mpesa\MpesaServiceProvider::class
 ````
+# Configurations
+
 
 # Usage
 
