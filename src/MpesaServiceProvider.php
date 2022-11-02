@@ -4,18 +4,21 @@ namespace Itsmurumba\Mpesa;
 
 use Illuminate\Support\ServiceProvider;
 
-class MpesaServiceProvider extends ServiceProvider{
+class MpesaServiceProvider extends ServiceProvider
+{
 
     /**
      * Publishes all the config file this package needs to function
      */
     public function boot()
     {
-        $config = realpath(__DIR__.'/../resources/config/mpesa.php');
+        $config = realpath(__DIR__ . '/../resources/config/mpesa.php');
 
-        $this->publishes([
-           $config => config_path('mpesa.php')
-        ]);
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                $config => config_path('mpesa.php')
+            ], 'mpesa-config');
+        }
     }
 
     /**
@@ -23,10 +26,9 @@ class MpesaServiceProvider extends ServiceProvider{
      */
     public function register()
     {
-        $this->app->bind('laravel-mpesa', function(){
+        $this->app->bind('laravel-mpesa', function () {
 
             return new Mpesa;
-
         });
     }
 
@@ -34,18 +36,9 @@ class MpesaServiceProvider extends ServiceProvider{
      * Get the services provided by the provider
      * @return array
      */
-    public function provides(){
+    public function provides()
+    {
 
         return ['laravel-mpesa'];
-
     }
 }
-
-
-
-
-
-
-
-
-
