@@ -10,17 +10,21 @@ This is a Laravel package for Safaricom Mpesa Daraja API. It includes all public
 
 # Installation
 
-Laravel 5.5+ :
+Run the following command to install Laravel Mpesa package in your Laravel project:
+
 ````
 composer require itsmurumba/laravel-mpesa
 ````
-
-Laravel =<5.4 :
 
 After running the composer install above, you should add a service provider and alias of the package in config/app.php file.
 
 ````
 Itsmurumba\Mpesa\MpesaServiceProvider::class
+````
+
+Run the following command to publish the mpesa.php configuration file in the config folder:
+````
+php artisan vendor:publish --provider="Itsmurumba\Mpesa\MpesaServiceProvider"
 ````
 # Configurations
 
