@@ -1,5 +1,12 @@
 # Introduction
-This is a Laravel package for Safaricom Mpesa Daraja API. It includes all public available endpoints.
+This is a Laravel package for Safaricom Mpesa Daraja API. It includes all public available endpoints:
+
+* Consumer to Business (C2B) payments
+* Business to Consumer (B2C) payments
+* Mpesa Express Payment (Lipa Na Mpesa Online)
+* Transaction Status
+* Account Balance
+* Reversal
 
 # Installation
 
