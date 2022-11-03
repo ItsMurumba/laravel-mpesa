@@ -3,6 +3,7 @@
 namespace Itsmurumba\Mpesa;
 
 use Illuminate\Support\ServiceProvider;
+use Itsmurumba\Mpesa\Console\InstallMpesaPackage;
 
 class MpesaServiceProvider extends ServiceProvider
 {
@@ -12,12 +13,10 @@ class MpesaServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $config = realpath(__DIR__ . '/../resources/config/mpesa.php');
-
         if ($this->app->runningInConsole()) {
-            $this->publishes([
-                $config => config_path('mpesa.php')
-            ], 'mpesa-config');
+            $this->commands([
+                InstallMpesaPackage::class,
+            ]);
         }
     }
 
