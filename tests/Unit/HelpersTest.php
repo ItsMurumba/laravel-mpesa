@@ -1,6 +1,6 @@
 <?php
 
-namespace Itsmurumba\Mpesa\Test;
+namespace Itsmurumba\Mpesa\Tests\Unit;
 
 use Mockery;
 use PHPUnit\Framework\TestCase;
