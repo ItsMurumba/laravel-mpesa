@@ -22,13 +22,24 @@ After running the composer install above, you should add a service provider and 
 Itsmurumba\Mpesa\MpesaServiceProvider::class
 ````
 
-Run the following command to publish the mpesa.php configuration file in the config folder:
+Run the following command to publish the `mpesa.php` configuration file in the config folder:
 ````
 php artisan vendor:publish --provider="Itsmurumba\Mpesa\MpesaServiceProvider"
 ````
 # Configurations
 
-1. Add the following to you .env file
+After installing the package, run the following command to configure `mpesa.php` in the `config` folder:
+
+````
+php artisan mpesa:install
+````
+
+or 
+````
+php artisan vendor:publish
+````
+
+Add the following to you .env file
 
 ````
 MPESA_CONSUMER_KEY=

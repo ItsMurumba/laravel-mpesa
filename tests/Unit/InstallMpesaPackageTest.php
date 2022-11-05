@@ -19,7 +19,11 @@ class InstallMpesaPackageTest extends TestCase
 
         $this->assertFalse(File::exists(config_path('mpesa.php')));
 
-        Artisan::call('mpesa:install');
+        // Artisan::call('mpesa:install');
+
+        $command = $this->artisan('mpesa:install');
+        $command->execute();
+
 
         $this->assertTrue(File::exists(config_path('mpesa.php')));
     }
@@ -71,7 +75,7 @@ class InstallMpesaPackageTest extends TestCase
 
         // Assert that the original contents of the config file remain
         $this->assertEquals(
-            file_get_contents(__DIR__ . '/../config/config.php'),
+            file_get_contents(__DIR__ . '/../resources/config/mpesa.php'),
             file_get_contents(config_path('mpesa.php'))
         );
 
