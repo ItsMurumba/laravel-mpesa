@@ -2,14 +2,16 @@
 
 namespace Itsmurumba\Mpesa\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
 use Illuminate\Support\Facades\File;
+use Itsmurumba\Mpesa\Tests\TestCase;
 use Illuminate\Support\Facades\Artisan;
 
 class InstallMpesaPackageTest extends TestCase
 {
-
-    function the_install_command_copis_the_configuration()
+    /**
+     * @test
+     */
+    public function the_install_command_copies_the_configuration()
     {
         if (File::exists(config_path('mpesa.php'))) {
             unlink(config_path('mpesa.php'));
@@ -22,8 +24,12 @@ class InstallMpesaPackageTest extends TestCase
         $this->assertTrue(File::exists(config_path('mpesa.php')));
     }
 
-    public function when_a_config_file_is_present_users_can_choose_to_not_overwrite_it(){
-        File::put(config_path('mpesa.php'), 'test contens');
+    /**
+     * @test
+     */
+    public function when_a_config_file_is_present_users_can_choose_to_not_overwrite_it()
+    {
+        File::put(config_path('mpesa.php'), 'test contents');
         $this->assertTrue(File::exists(config_path('mpesa.php')));
 
         $command = $this->artisan('mpesa:install');
@@ -34,18 +40,20 @@ class InstallMpesaPackageTest extends TestCase
         );
 
         // We should see a message that our file was not overwritten
-        $command->expectsOutput('Existing configuration was not overwritten');
+        $command->expectsOutput('Existing. Mpesa configuration was not overwritten');
 
         // Assert that the original contents of the config file remain
         $this->assertEquals('test contents', file_get_contents(config_path('mpesa.php')));
 
         //Clean up
         unlink(config_path('mpesa.php'));
-
     }
 
-
-    public function when_a_config_file_is_present_users_can_choose_to_overwrite_it(){
+    /**
+     * @test
+     */
+    public function when_a_config_file_is_present_users_can_choose_to_overwrite_it()
+    {
         File::put(config_path('mpesa.php'), 'test contens');
         $this->assertTrue(File::exists(config_path('mpesa.php')));
 
@@ -63,12 +71,11 @@ class InstallMpesaPackageTest extends TestCase
 
         // Assert that the original contents of the config file remain
         $this->assertEquals(
-            file_get_contents(__DIR__.'/../config/config.php'),
+            file_get_contents(__DIR__ . '/../config/config.php'),
             file_get_contents(config_path('mpesa.php'))
         );
 
         //Clean up
         unlink(config_path('mpesa.php'));
-
     }
 }

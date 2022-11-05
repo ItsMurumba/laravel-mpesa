@@ -13,7 +13,13 @@ class MpesaServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        $config = realpath(__DIR__ . '/../resources/config/mpesa.php');
+
         if ($this->app->runningInConsole()) {
+            $this->publishes([
+                $config => config_path('mpesa.php')
+            ]);
+
             $this->commands([
                 InstallMpesaPackage::class,
             ]);

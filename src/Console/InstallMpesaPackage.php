@@ -24,7 +24,7 @@ class InstallMpesaPackage extends Command
                 $this->info('Overwitting mpesa configuration file......');
                 $this->publishConfiguration($force = true);
             } else {
-                $this->info('Existing mpesa configuration was not overwritten');
+                $this->info('Existing. Mpesa configuration was not overwritten');
             }
         }
 
@@ -45,7 +45,7 @@ class InstallMpesaPackage extends Command
     {
         $params = [
             '--provider' => "Itsmurumba\Mpesa\MpesaServiceProvider",
-            '--tag' => "config"
+            '--tag' => "mpesa-config"
         ];
 
         if ($forcePublish === true) {
