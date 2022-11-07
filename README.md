@@ -7,6 +7,7 @@ This is a Laravel package for Safaricom Mpesa Daraja API. It includes all public
 * Transaction Status
 * Account Balance
 * Reversal
+* Business to Business (B2B) payments
 
 # Installation
 
@@ -16,19 +17,17 @@ Run the following command to install Laravel Mpesa package in your Laravel proje
 composer require itsmurumba/laravel-mpesa
 ````
 
-After running the composer install above, you should add a service provider and alias of the package in config/app.php file.
+If you are using **Laravel 5.5** and above, skip to the [**Configurations**](https://github.com/ItsMurumba/laravel-mpesa#configurations) step.
+
+After running the composer require above, you should add a service provider and alias of the package in config/app.php file.(For Laravel 5.4 and below)
 
 ````
 Itsmurumba\Mpesa\MpesaServiceProvider::class
 ````
 
-Run the following command to publish the `mpesa.php` configuration file in the config folder:
-````
-php artisan vendor:publish --provider="Itsmurumba\Mpesa\MpesaServiceProvider"
-````
 # Configurations
 
-After installing the package, run the following command to configure `mpesa.php` in the `config` folder:
+After installing the package, run the following command to install `mpesa.php` configuartion file in the `config` folder:
 
 ````
 php artisan mpesa:install
@@ -39,7 +38,7 @@ or
 php artisan vendor:publish
 ````
 
-Add the following to you .env file
+Add and define the following variables in your `.env` file
 
 ````
 MPESA_CONSUMER_KEY=
@@ -60,8 +59,24 @@ MPESA_RESULT_URL=
 ````
 
 # Usage
+1. Mpesa Express Payment (Lipa Na Mpesa Online)
+````
+$mpesa = new Mpesa();
+$mpesa->expressPayment(1,254720000000,'Test Payment');
 
-1. 
+1 = amount
+254720000000 = phone number
+'CompanyXLTD' = Account Reference
+'Test Payment' = Transaction Description
+````
+2. Mpesa Express Payment Query (Lipa Na Mpesa Online)
+3. C2B Register URLs
+4. Consumer to Business (C2B) payments
+5. Business to Consumer (B2C) payments
+6. Transaction Status
+7. Account Balance
+8. Reversal
+9. Business to Business Payment(B2B)
 
 
 # Contribution
