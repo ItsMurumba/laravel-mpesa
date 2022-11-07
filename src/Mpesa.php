@@ -465,11 +465,11 @@ class Mpesa
      * @param [type] $billRefNumber
      * @return void
      */
-    public function c2bPayment($amount, $phoneNumber, $billRefNumber)
+    public function c2bPayment($commandId, $amount, $phoneNumber, $billRefNumber)
     {
         $arrayData = array(
             "ShortCode" => $this->lipaNaMpesaShortcode,
-            "CommandID" => "CustomerPayBillOnline",
+            "CommandID" => $commandId,
             "amount" => $amount,
             "MSISDN" => $phoneNumber,
             "BillRefNumber" => $billRefNumber,

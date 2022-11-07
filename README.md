@@ -59,24 +59,59 @@ MPESA_RESULT_URL=
 ````
 
 # Usage
-1. Mpesa Express Payment (Lipa Na Mpesa Online)
+**1. Mpesa Express Payment (Lipa Na Mpesa Online)**
 ````
 $mpesa = new Mpesa();
-$mpesa->expressPayment(1,254720000000,'Test Payment');
-
-1 = amount
-254720000000 = phone number
-'CompanyXLTD' = Account Reference
-'Test Payment' = Transaction Description
+$mpesa->expressPayment($amount, $phoneNumber, $accountReference = 'CompanyXLTD', $transactionDescription = 'Payment of X');
 ````
-2. Mpesa Express Payment Query (Lipa Na Mpesa Online)
-3. C2B Register URLs
-4. Consumer to Business (C2B) payments
-5. Business to Consumer (B2C) payments
+* $phoneNumber = 254XXXXXXXXX
+* $accountReference = Account Reference (maximum 12 characters)
+* transactionDescription = Transaction Description (1-13 characters)
+
+**2. Mpesa Express Payment Query (Lipa Na Mpesa Online)**
+````
+$mpesa = new Mpesa();
+$mpesa->expressPaymentQuery($checkoutRequestId);
+````
+**3. C2B Register URLs**
+````
+$mpesa = new Mpesa();
+$mpesa->c2bRegisterURLs();
+````
+
+**4. Consumer to Business (C2B) payments**
+````
+$mpesa = new Mpesa();
+$mpesa->c2bPaymentc2bPayment($commandId, $amount, $phoneNumber, $billRefNumber); 
+````
+* $commandId = can only be set to **CustomerPayBillOnline** or **CustomerBuyGoodsOnline**
+* $billRefNumber = used on CustomerPayBillOnline option only e.g an Account Number. Set the value to `''` when commandId is **CustomerBuyGoodsOnline**
+
+**5. Business to Consumer (B2C) payments**
+````
+$mpesa = new Mpesa();
+$mpesa->b2cPayment($commandId, $amount, $phoneNumber, $remarks, $occassion = '');
+````
 6. Transaction Status
+````
+$mpesa = new Mpesa();
+$mpesa->transactionStatus($transactionId, $identifierType, $remarks, $occassion = '');
+````
 7. Account Balance
+````
+$mpesa = new Mpesa();
+$mpesa->accountBalance($identifierType, $remarks);
+````
 8. Reversal
+````
+$mpesa = new Mpesa();
+$mpesa->reversals($transactionId, $amount, $receiverParty, $receiverIdentifierType, $remarks, $occasion = '');
+````
 9. Business to Business Payment(B2B)
+````
+$mpesa = new Mpesa();
+$mpesa->b2bPayment($commandId, $amount, $receiverShortcode, $accountReference, $remarks);
+````
 
 
 # Contribution
