@@ -33,7 +33,7 @@ class MpesaServiceProvider extends ServiceProvider
     {
         $this->app->bind('laravel-mpesa', function () {
 
-            return new Mpesa;
+            return new Mpesa();
         });
     }
 
