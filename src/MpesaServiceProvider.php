@@ -18,7 +18,7 @@ class MpesaServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 $config => config_path('mpesa.php')
-            ]);
+            ], 'mpesa-config');
 
             $this->commands([
                 InstallMpesaPackage::class,
