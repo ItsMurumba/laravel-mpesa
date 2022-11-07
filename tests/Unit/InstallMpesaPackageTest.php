@@ -19,11 +19,7 @@ class InstallMpesaPackageTest extends TestCase
 
         $this->assertFalse(File::exists(config_path('mpesa.php')));
 
-        // Artisan::call('mpesa:install');
-
-        $command = $this->artisan('mpesa:install');
-        $command->execute();
-
+        Artisan::call('mpesa:install');
 
         $this->assertTrue(File::exists(config_path('mpesa.php')));
     }

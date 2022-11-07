@@ -40,7 +40,10 @@
         "laravel": {
             "providers": [
                 "Itsmurumba\\Mpesa\\MpesaServiceProvider"
-            ]
+            ],
+            "aliases": {
+                "Mpesa": "Itsmurumba\\Mpesa\\Facades\\Mpesa"
+            }
         }
     }
 }
