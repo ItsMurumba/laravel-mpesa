@@ -92,22 +92,22 @@ $mpesa->c2bPaymentc2bPayment($commandId, $amount, $phoneNumber, $billRefNumber);
 $mpesa = new Mpesa();
 $mpesa->b2cPayment($commandId, $amount, $phoneNumber, $remarks, $occassion = '');
 ````
-6. Transaction Status
+**6. Transaction Status**
 ````
 $mpesa = new Mpesa();
 $mpesa->transactionStatus($transactionId, $identifierType, $remarks, $occassion = '');
 ````
-7. Account Balance
+**7. Account Balance**
 ````
 $mpesa = new Mpesa();
 $mpesa->accountBalance($identifierType, $remarks);
 ````
-8. Reversal
+**8. Reversal**
 ````
 $mpesa = new Mpesa();
 $mpesa->reversals($transactionId, $amount, $receiverParty, $receiverIdentifierType, $remarks, $occasion = '');
 ````
-9. Business to Business Payment(B2B)
+**9. Business to Business Payment(B2B)**
 ````
 $mpesa = new Mpesa();
 $mpesa->b2bPayment($commandId, $amount, $receiverShortcode, $accountReference, $remarks);
