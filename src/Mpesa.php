@@ -318,20 +318,14 @@ class Mpesa
             throw new IsNullException("Empty method not allowed");
         }
 
-        if (isset($this->accessToken) && strtotime($this->expiresIn) > time()) {
-            $accessToken = $this->accessToken;
-        } else {
-            $accessToken = $this->getAccessToken();
-        }
-
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $accessToken,
-        ])->post(
+        $response = $this->client->{strtolower($method)}(
             $this->baseUrl . $relativeUrl,
-            $data
+            array(
+                'body' => json_encode($data)
+            )
         );
 
-        return $response;
+        return $response->getBody()->getContents();
     }
 
     /**
