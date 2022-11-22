@@ -24,7 +24,7 @@ class InstallMpesaPackage extends Command
                 $this->info('Overwitting mpesa configuration file......');
                 $this->publishConfiguration($force = true);
             } else {
-                $this->info('Existing. Mpesa configuration was not overwritten');
+                $this->info('Exiting. Mpesa configuration was not overwritten');
             }
         }
 
@@ -38,7 +38,7 @@ class InstallMpesaPackage extends Command
 
     private function shouldOverwriteConfig()
     {
-        return $this->confirm('Config file alaready exists. Do you want to overwrite it?', false);
+        return $this->confirm('Config file already exists. Do you want to overwrite it?', false);
     }
 
     private function publishConfiguration($forcePublish = false)
