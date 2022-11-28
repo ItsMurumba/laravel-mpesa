@@ -24,9 +24,7 @@ class InstallMpesaPackageTest extends TestCase
         $this->assertTrue(File::exists(config_path('mpesa.php')));
     }
 
-    /**
-     * @test
-     */
+   
     public function when_a_config_file_is_present_users_can_choose_to_not_overwrite_it()
     {
         File::put(config_path('mpesa.php'), 'test contents');
@@ -49,9 +47,7 @@ class InstallMpesaPackageTest extends TestCase
         unlink(config_path('mpesa.php'));
     }
 
-    /**
-     * @test
-     */
+
     public function when_a_config_file_is_present_users_can_choose_to_overwrite_it()
     {
         File::put(config_path('mpesa.php'), 'test contens');
