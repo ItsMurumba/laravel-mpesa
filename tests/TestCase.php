@@ -9,6 +9,7 @@ use Orchestra\Testbench\TestCase as TestbenchTestCase;
 class TestCase extends TestbenchTestCase
 {
     protected $mpesa;
+    protected $mock;
 
     public function setUp(): void
     {
