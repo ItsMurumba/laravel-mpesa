@@ -51,7 +51,7 @@ class MpesaAuthTest extends TestCase
     {
         $this->baseUrl = 'https://invalidurl.com';
 
-        $result = $this->getAccessToken();
+        $result = $this->mpesa->getAccessToken();
 
         $this->assertFalse($result);
     }
