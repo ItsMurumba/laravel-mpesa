@@ -59,10 +59,18 @@ MPESA_RESULT_URL=
 ````
 
 # Usage
+Add the following constructor inside your controller:
+`````
+protected $mpesa;
+
+public function __construct(){
+    $this->mpesa = new Mpesa();
+}
+`````
+
 **1. Mpesa Express Payment (Lipa Na Mpesa Online)**
 ````
-$mpesa = new Mpesa();
-$mpesa->expressPayment($amount, $phoneNumber, $accountReference = 'CompanyXLTD', $transactionDescription = 'Payment of X');
+$this->mpesa->expressPayment($amount, $phoneNumber, $accountReference = 'CompanyXLTD', $transactionDescription = 'Payment of X');
 ````
 * $phoneNumber = 254XXXXXXXXX
 * $accountReference = Account Reference (maximum 12 characters)
@@ -70,47 +78,39 @@ $mpesa->expressPayment($amount, $phoneNumber, $accountReference = 'CompanyXLTD',
 
 **2. Mpesa Express Payment Query (Lipa Na Mpesa Online)**
 ````
-$mpesa = new Mpesa();
-$mpesa->expressPaymentQuery($checkoutRequestId);
+$this->mpesa->expressPaymentQuery($checkoutRequestId);
 ````
 **3. C2B Register URLs**
 ````
-$mpesa = new Mpesa();
-$mpesa->c2bRegisterURLs();
+$this->mpesa->c2bRegisterURLs();
 ````
 
 **4. Consumer to Business (C2B) payments**
 ````
-$mpesa = new Mpesa();
-$mpesa->c2bPaymentc2bPayment($commandId, $amount, $phoneNumber, $billRefNumber); 
+$this->mpesa->c2bPaymentc2bPayment($commandId, $amount, $phoneNumber, $billRefNumber); 
 ````
 * $commandId = can only be set to **CustomerPayBillOnline** or **CustomerBuyGoodsOnline**
 * $billRefNumber = used on CustomerPayBillOnline option only e.g an Account Number. Set the value to `''` when commandId is **CustomerBuyGoodsOnline**
 
 **5. Business to Consumer (B2C) payments**
 ````
-$mpesa = new Mpesa();
-$mpesa->b2cPayment($commandId, $amount, $phoneNumber, $remarks, $occassion = '');
+$this->mpesa->b2cPayment($commandId, $amount, $phoneNumber, $remarks, $occassion = '');
 ````
 **6. Transaction Status**
 ````
-$mpesa = new Mpesa();
-$mpesa->transactionStatus($transactionId, $identifierType, $remarks, $occassion = '');
+$this->mpesa->transactionStatus($transactionId, $identifierType, $remarks, $occassion = '');
 ````
 **7. Account Balance**
 ````
-$mpesa = new Mpesa();
-$mpesa->accountBalance($identifierType, $remarks);
+$this->mpesa->accountBalance($identifierType, $remarks);
 ````
 **8. Reversal**
 ````
-$mpesa = new Mpesa();
-$mpesa->reversals($transactionId, $amount, $receiverParty, $receiverIdentifierType, $remarks, $occasion = '');
+$this->mpesa->reversals($transactionId, $amount, $receiverParty, $receiverIdentifierType, $remarks, $occasion = '');
 ````
 **9. Business to Business Payment(B2B)**
 ````
-$mpesa = new Mpesa();
-$mpesa->b2bPayment($commandId, $amount, $receiverShortcode, $accountReference, $remarks);
+$this->mpesa->b2bPayment($commandId, $amount, $receiverShortcode, $accountReference, $remarks);
 ````
 
 
