@@ -45,7 +45,7 @@ class Mpesa
     /**
      * CallBackURL
      */
-    protected $callbackUrl;
+    protected $callBackURL;
 
     /**
      * Access token from Mpesa for authentication in subsequent requests
@@ -67,7 +67,7 @@ class Mpesa
     /**
      * Lipa na Mpesa Callback URL
      */
-    protected $lipaNaMpesaCallbackURL;
+    protected $çç;
 
     /**
      * Lipa na Mpesa Passkey
@@ -111,6 +111,11 @@ class Mpesa
      * by M-Pesa to send notification upon processing of the payment request.
      */
     protected $resultURL;
+
+    /**
+     *
+     */
+    protected $lipaNaMpesaCallbackURL;
 
 
 
@@ -163,7 +168,7 @@ class Mpesa
      */
     public function setPaybillNumber()
     {
-        $this->paybillNumber = Config::get('mpesa.paybillNumber');
+        $this->payBillNumber = Config::get('mpesa.paybillNumber');
     }
 
     /**
