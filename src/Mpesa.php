@@ -807,14 +807,22 @@ class Mpesa
      * Bulk Invoicing - Generic API for sending multiple e-invoices to customers.
      * This API enables you to create and send e-invoices to your customers in bulk.
      *
-     * @param  array  $invoices Array of invoices to be sent in bulk.
+     * @param array $invoices A collection of invoices to be sent in bulk.
+     * Each invoice should contain the following keys:
+     *                          - externalReference: Unique invoice name for referencing an invoice.
+     *                          - billedFullName: The name of the recipient to receive the invoice details.
+     *                          - billedPhoneNumber: The phone number to receive invoice details via SMS.
+     *                          - billedPeriod: Month and Year of the billed period.
+     *                          - invoiceName: A descriptive invoice name for what your customer is being billed.
+     *                          - dueDate: The date you expect the customer to have paid the invoice amount.
+     *                          - accountReference: The account number being invoiced that uniquely identifies a customer.
+     *                          - amount: Total Invoice amount to be paid in Kenyan Shillings.
+     *                          - invoiceItems: Additional billable items to be included in the invoice.
      * @return array JSON response containing the bulk invoice sending status
      */
     public function billManagerBulkInvoicing($invoices)
     {
-        $data = [
-            'bulk' => $invoices,
-        ];
+        $data = $invoices;
 
         $response = $this->setHttpResponse('/billmanager-invoice/bulk-invoicing', 'POST', $data);
 
