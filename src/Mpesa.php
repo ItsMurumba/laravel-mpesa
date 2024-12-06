@@ -828,4 +828,38 @@ class Mpesa
 
         return $response;
     }
+
+    /**
+     * Payments and Reconciliation - Generic API for processing payments and sending e-receipts.
+     * This API enables your customers to receive e-receipts for payments made to your paybill account.
+     *
+     * @param string $transactionId The M-PESA generated reference.
+     * @param numeric $paidAmount Amount Paid In KES.
+     * @param numeric $msisdn The customers PhoneNumber debited.
+     * @param string $dateCreated The date the payment was done and recorded in the BillManager System.
+     * @param string $accountReference This is the account number being invoiced that uniquely identifies a customer.
+     * @param numeric $shortCode This is organizations shortcode (Paybill or Buygoods - A 5 to 6 digit account number) used to identify an organization and receive the transaction.
+     * @return array JSON response containing the payment processing status
+     */
+    public function billManagerPaymentReconciliation(
+        $transactionId,
+        $paidAmount,
+        $customerPhoneNumber,
+        $dateCreated,
+        $accountReference,
+        $shortCode
+    ) {
+        $data = [
+            'transactionId' => $transactionId,
+            'paidAmount' => $paidAmount,
+            'msisdn' => $customerPhoneNumber,
+            'dateCreated' => $dateCreated,
+            'accountReference' => $accountReference,
+            'shortCode' => $shortCode ?? $this->lipaNaMpesaShortcode,
+        ];
+
+        $response = $this->setHttpResponse('/billmanager-invoice/reconciliation', 'POST', $data);
+
+        return $response;
+    }
 }
