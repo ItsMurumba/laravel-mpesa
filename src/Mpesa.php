@@ -755,7 +755,7 @@ class Mpesa
             'callbackurl' => $callbackURL ?? $this->lipaNaMpesaCallbackURL,
         ];
 
-        $response = $this->setHttpResponse('/billmanager-invoice/optin', 'POST', $data);
+        $response = $this->setHttpResponse('/v1/billmanager-invoice/optin', 'POST', $data);
 
         return $response;
     }
@@ -798,7 +798,7 @@ class Mpesa
             'invoiceItems' => $invoiceItems,
         ];
 
-        $response = $this->setHttpResponse('/billmanager-invoice/single-invoicing', 'POST', $data);
+        $response = $this->setHttpResponse('/v1/billmanager-invoice/single-invoicing', 'POST', $data);
 
         return $response;
     }
@@ -824,7 +824,7 @@ class Mpesa
     {
         $data = $invoices;
 
-        $response = $this->setHttpResponse('/billmanager-invoice/bulk-invoicing', 'POST', $data);
+        $response = $this->setHttpResponse('/v1/billmanager-invoice/bulk-invoicing', 'POST', $data);
 
         return $response;
     }
@@ -858,7 +858,7 @@ class Mpesa
             'shortCode' => $shortCode ?? $this->lipaNaMpesaShortcode,
         ];
 
-        $response = $this->setHttpResponse('/billmanager-invoice/reconciliation', 'POST', $data);
+        $response = $this->setHttpResponse('/v1/billmanager-invoice/reconciliation', 'POST', $data);
 
         return $response;
     }
