@@ -807,7 +807,7 @@ class Mpesa
      * Bulk Invoicing - Generic API for sending multiple e-invoices to customers.
      * This API enables you to create and send e-invoices to your customers in bulk.
      *
-     * @param array $invoices A collection of invoices to be sent in bulk.
+     * @param  array  $invoices A collection of invoices to be sent in bulk.
      * Each invoice should contain the following keys:
      *                          - externalReference: Unique invoice name for referencing an invoice.
      *                          - billedFullName: The name of the recipient to receive the invoice details.
@@ -833,12 +833,12 @@ class Mpesa
      * Payments and Reconciliation - Generic API for processing payments and sending e-receipts.
      * This API enables your customers to receive e-receipts for payments made to your paybill account.
      *
-     * @param string $transactionId The M-PESA generated reference.
-     * @param numeric $paidAmount Amount Paid In KES.
-     * @param numeric $msisdn The customers PhoneNumber debited.
-     * @param string $dateCreated The date the payment was done and recorded in the BillManager System.
-     * @param string $accountReference This is the account number being invoiced that uniquely identifies a customer.
-     * @param numeric $shortCode This is organizations shortcode (Paybill or Buygoods - A 5 to 6 digit account number) used to identify an organization and receive the transaction.
+     * @param  string  $transactionId The M-PESA generated reference.
+     * @param  numeric  $paidAmount Amount Paid In KES.
+     * @param  numeric  $msisdn The customers PhoneNumber debited.
+     * @param  string  $dateCreated The date the payment was done and recorded in the BillManager System.
+     * @param  string  $accountReference This is the account number being invoiced that uniquely identifies a customer.
+     * @param  numeric  $shortCode This is organizations shortcode (Paybill or Buygoods - A 5 to 6 digit account number) used to identify an organization and receive the transaction.
      * @return array JSON response containing the payment processing status
      */
     public function billManagerPaymentReconciliation(
@@ -859,6 +859,24 @@ class Mpesa
         ];
 
         $response = $this->setHttpResponse('/billmanager-invoice/reconciliation', 'POST', $data);
+
+        return $response;
+    }
+
+    /**
+     * Cancel a single invoice.
+     * This API allows you to recall a sent invoice. This means the invoice will cease to exist and cannot be used as a reference to a payment.
+     *
+     * @param  string  $externalReference The external reference number of the invoice to be canceled.
+     * @return array JSON response containing the status of the invoice cancellation
+     */
+    public function billManagerancelSingleInvoice($externalReference)
+    {
+        $data = [
+            'externalReference' => $externalReference,
+        ];
+
+        $response = $this->setHttpResponse('/v1/billmanager-invoice/cancel-single-invoice', 'POST', $data);
 
         return $response;
     }
