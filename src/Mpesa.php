@@ -899,4 +899,32 @@ class Mpesa
 
         return $response;
     }
+
+    /**
+     * Update Optin details.
+     * This API is used to update opt-in details.
+     *
+     * @param  string  $shortcode The shortcode for the bill manager.
+     * @param  string  $email The official contact email address for the organization.
+     * @param  string  $officialContact The official contact phone number for the organization.
+     * @param  int  $sendReminders Flag to enable or disable SMS payment reminders.
+     * @param  string  $logo The image to be embedded in invoices and receipts.
+     * @param  string  $callbackurl The callback URL for payment notifications.
+     * @return array JSON response containing the status of the opt-in details update
+     */
+    public function billManagerUpdateOptinDetails($shortcode, $email, $officialContact, $sendReminders, $logo, $callbackurl = null)
+    {
+        $data = [
+            'shortcode' => $shortcode ?? $this->lipaNaMpesaShortcode,
+            'email' => $email,
+            'officialContact' => $officialContact,
+            'sendReminders' => $sendReminders,
+            'logo' => $logo,
+            'callbackurl' => $callbackurl ?? $this->lipaNaMpesaCallbackURL,
+        ];
+
+        $response = $this->setHttpResponse('/v1/billmanager-invoice/change-optin-details', 'POST', $data);
+
+        return $response;
+    }
 }
