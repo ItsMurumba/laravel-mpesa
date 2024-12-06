@@ -3,6 +3,7 @@
 namespace Itsmurumba\Mpesa;
 
 use GuzzleHttp\Client;
+use InvalidArgumentException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -632,4 +633,39 @@ class Mpesa
 
         return $response;
     }
+
+    /**
+     * Generate a dynamic QR code for M-Pesa payments
+     *
+     * @param string $merchantName The name of the merchant/business
+     * @param string $transactionReference A unique reference for the transaction
+     * @param float $amount The amount to be paid
+     * @param string $transactionType Type of transaction (BG: Buy Goods, WA: Withdraw Agent, PB: Pay Bill, SM: Send Money, SB: Send Business)
+     * @param string $creditPartyIdentifier The till number, paybill, or phone number receiving payment
+     * @param string $size The size of the QR code in pixels (default: 300)
+     * @return string JSON response containing the QR code data
+     * @throws InvalidArgumentException When an invalid transaction type is provided
+     */
+    public function generateDynamicQRCode($merchantName, $transactionReference, $amount, $transactionType, $creditPartyIdentifier, $size = '300')
+    {
+        $supportedTransactionTypes = ['BG', 'WA', 'PB', 'SM', 'SB'];
+
+        if (!in_array($transactionType, $supportedTransactionTypes)) {
+            throw new InvalidArgumentException("Invalid transaction type. Supported types are: " . implode(', ', $supportedTransactionTypes));
+        }
+
+        $data = [
+            'MerchantName' => $merchantName,
+            'RefNo' => $transactionReference,
+            'Amount' => $amount,
+            'TrxCode' => $transactionType,
+            'CPI' => $creditPartyIdentifier,
+            'Size' => $size,
+        ];
+
+        $response = $this->setHttpResponse('/mpesa/qrcode/v1/generate', 'POST', $data);
+
+        return $response;
+    }
+
 }
