@@ -870,13 +870,32 @@ class Mpesa
      * @param  string  $externalReference The external reference number of the invoice to be canceled.
      * @return array JSON response containing the status of the invoice cancellation
      */
-    public function billManagerancelSingleInvoice($externalReference)
+    public function billManagerCancelSingleInvoice($externalReference)
     {
         $data = [
             'externalReference' => $externalReference,
         ];
 
         $response = $this->setHttpResponse('/v1/billmanager-invoice/cancel-single-invoice', 'POST', $data);
+
+        return $response;
+    }
+
+    /**
+     * Cancel multiple invoices.
+     * This API allows you to recall more than one sent invoice.
+     *
+     * @param  array  $externalReferences An array of external reference numbers of the invoices to be canceled.
+     * @return array JSON response containing the status of the invoice cancellation
+     */
+    public function billManagerCancelBulkInvoices($externalReferences)
+    {
+        $data = [];
+        foreach ($externalReferences as $externalReference) {
+            $data[] = ['externalReference' => $externalReference];
+        }
+
+        $response = $this->setHttpResponse('/v1/billmanager-invoice/cancel-bulk-invoices', 'POST', $data);
 
         return $response;
     }
