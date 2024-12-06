@@ -738,8 +738,8 @@ class Mpesa
      * @param  string  $callbackURL The callback URL to be invoked by the payments API to push payments done to the paybill.
      * @return array JSON response containing the opt-in status
      */
-    public function optInToBillManager(
-        $shortcode = null,
+    public function billManagerOptInTo(
+        $shortcode,
         $email,
         $officialContact,
         $sendReminders,
@@ -756,6 +756,49 @@ class Mpesa
         ];
 
         $response = $this->setHttpResponse('/billmanager-invoice/optin', 'POST', $data);
+
+        return $response;
+    }
+
+    /**
+     * Single Invoicing - Generic API for sending customized individual e-invoices.
+     * This API enables you to create and send e-invoices to your customers.
+     *
+     * @param  string  $externalReference Unique invoice name for referencing an invoice.
+     * @param  string  $billedFullName The name of the recipient to receive the invoice details.
+     * @param  string  $billedPhoneNumber The phone number to receive invoice details via SMS.
+     * @param  string  $billedPeriod Month and Year of the billed period.
+     * @param  string  $invoiceName A descriptive invoice name for what your customer is being billed.
+     * @param  string  $dueDate The date you expect the customer to have paid the invoice amount.
+     * @param  string  $accountReference The account number being invoiced that uniquely identifies a customer.
+     * @param  string  $amount Total Invoice amount to be paid in Kenyan Shillings.
+     * @param  array  $invoiceItems Additional billable items to be included in the invoice.
+     * @return array JSON response containing the invoice sending status
+     */
+    public function billManagerSingleInvoicing(
+        $externalReference,
+        $billedFullName,
+        $billedPhoneNumber,
+        $billedPeriod,
+        $invoiceName,
+        $dueDate,
+        $accountReference,
+        $amount,
+        $invoiceItems = []
+    ) {
+        $data = [
+            'externalReference' => $externalReference,
+            'billedFullName' => $billedFullName,
+            'billedPhoneNumber' => $billedPhoneNumber,
+            'billedPeriod' => $billedPeriod,
+            'invoiceName' => $invoiceName,
+            'dueDate' => $dueDate,
+            'accountReference' => $accountReference,
+            'amount' => $amount,
+            'invoiceItems' => $invoiceItems,
+        ];
+
+        $response = $this->setHttpResponse('/billmanager-invoice/single-invoicing', 'POST', $data);
 
         return $response;
     }
