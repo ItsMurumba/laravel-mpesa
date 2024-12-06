@@ -725,4 +725,38 @@ class Mpesa
 
         return $response;
     }
+
+    /**
+     * Opt-in to M-PESA Bill Manager for organizations.
+     * This API is used to opt-in as a biller to the M-PESA Bill Manager features.
+     *
+     * @param  string  $shortcode The organization's shortcode (Paybill or Buygoods) used to identify the organization and receive transactions.
+     * @param  string  $email The official contact email address for the organization signing up to bill manager.
+     * @param  string  $officialContact The official contact phone number for the organization signing up to bill manager.
+     * @param  int  $sendReminders Flag to enable or disable SMS payment reminders for invoices sent.
+     * @param  string  $logo Image to be embedded in the invoices and receipts sent to the customer.
+     * @param  string  $callbackURL The callback URL to be invoked by the payments API to push payments done to the paybill.
+     * @return array JSON response containing the opt-in status
+     */
+    public function optInToBillManager(
+        $shortcode = null,
+        $email,
+        $officialContact,
+        $sendReminders,
+        $logo,
+        $callbackURL = null
+    ) {
+        $data = [
+            'shortcode' => $shortcode ?? $this->lipaNaMpesaShortcode,
+            'email' => $email,
+            'officialContact' => $officialContact,
+            'sendReminders' => $sendReminders,
+            'logo' => $logo,
+            'callbackurl' => $callbackURL ?? $this->lipaNaMpesaCallbackURL,
+        ];
+
+        $response = $this->setHttpResponse('/billmanager-invoice/optin', 'POST', $data);
+
+        return $response;
+    }
 }
