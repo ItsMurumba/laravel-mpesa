@@ -802,4 +802,22 @@ class Mpesa
 
         return $response;
     }
+
+    /**
+     * Bulk Invoicing - Generic API for sending multiple e-invoices to customers.
+     * This API enables you to create and send e-invoices to your customers in bulk.
+     *
+     * @param  array  $invoices Array of invoices to be sent in bulk.
+     * @return array JSON response containing the bulk invoice sending status
+     */
+    public function billManagerBulkInvoicing($invoices)
+    {
+        $data = [
+            'bulk' => $invoices,
+        ];
+
+        $response = $this->setHttpResponse('/billmanager-invoice/bulk-invoicing', 'POST', $data);
+
+        return $response;
+    }
 }
