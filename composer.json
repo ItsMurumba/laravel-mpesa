@@ -38,11 +38,10 @@
         "guzzlehttp/guzzle": "^6.0|^7.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^8.0|^9.0",
-        "orchestra/testbench": "^4.0"
+        "pestphp/pest": "^3.6"
     },
     "scripts": {
-        "test": "vendor/bin/phpunit"
+        "test": "vendor/bin/pest"
     },
     "extra": {
         "laravel": {
@@ -52,6 +51,11 @@
             "aliases": {
                 "Mpesa": "Itsmurumba\\Mpesa\\Facades\\Mpesa"
             }
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
         }
     }
 }
