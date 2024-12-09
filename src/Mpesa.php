@@ -595,8 +595,9 @@ class Mpesa
     }
 
     /**
-     * The Business to Business (B2B) API:
-     * used to transfer money from one business to another business.
+     * This API enables you to pay bills directly from your business account to a pay bill number, or a paybill store.
+     * You can use this API to pay on behalf of a consumer/requester.
+     * The transaction moves money from your MMF/Working account to the recipient’s utility account.
      *
      * @param [type] $commandId
      * @param [type] $amount
@@ -611,8 +612,8 @@ class Mpesa
             'InitiatorName' => $this->initiatorUsername,
             'SecurityCredential' => $this->setSecurityCredentials(),
             'CommandID' => $commandId,
-            'SenderIdentifierType' => 'Shortcode',
-            'RecieverIdentifierType' => 'Shortcode',
+            'SenderIdentifierType' => '4',
+            'RecieverIdentifierType' => '4',
             'Amount' => $amount,
             'PartyA' => $this->lipaNaMpesaShortcode,
             'PartyB' => $receiverShortcode,
