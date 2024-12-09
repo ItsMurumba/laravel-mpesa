@@ -823,6 +823,26 @@ class Mpesa
      */
     public function billManagerBulkInvoicing($invoices)
     {
+        $requiredFields = [
+            'externalReference',
+            'billedFullName',
+            'billedPhoneNumber',
+            'billedPeriod',
+            'invoiceName',
+            'dueDate',
+            'accountReference',
+            'amount',
+        ];
+
+        foreach ($invoices as $invoice) {
+            $missingFields = array_diff($requiredFields, array_keys($invoice));
+            if (! empty($missingFields)) {
+                throw new InvalidArgumentException(
+                    'Missing required fields: '.implode(', ', $missingFields)
+                );
+            }
+        }
+
         $data = $invoices;
 
         $response = $this->setHttpResponse('/v1/billmanager-invoice/bulk-invoicing', 'POST', $data);
