@@ -703,7 +703,7 @@ class Mpesa
         }
 
         if (! in_array($receiverPartyIdentifierType, $validReceiverPartyIdentifierType)) {
-            throw new InvalidArgumentException('Invalid frequency. Supported values are: '.implode(', ', $validReceiverPartyIdentifierType));
+            throw new InvalidArgumentException('Invalid receiver Party Identifier Type. Supported values are: '.implode(', ', $validReceiverPartyIdentifierType));
         }
 
         $data = [
