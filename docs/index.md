@@ -4,8 +4,8 @@ layout: home
 
 hero:
   name: "Laravel Mpesa"
-  text: "A Laravel package for integrating with Mpesa Daraja API."
-  tagline: Integrate Mpesa payments in minutes
+  text: "A Laravel package for integrating with Mpesa Payments."
+  tagline: Accept Mpesa payments in minutes
   actions:
     - theme: brand
       text: Quick Start
