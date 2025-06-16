@@ -38,7 +38,7 @@
         "guzzlehttp/guzzle": "^6.0|^7.0"
     },
     "require-dev": {
-        "pestphp/pest": "^3.6"
+        "pestphp/pest": "^3.8"
     },
     "scripts": {
         "test": "vendor/bin/pest"
