@@ -980,4 +980,44 @@ class Mpesa
 
         return $response;
     }
+
+    /**
+     * B2B Express Checkout (USSD Push to Till) enables merchants to initiate USSD Push to till,
+     * enabling their fellow merchants to pay from their own till numbers to the vendor's paybill.
+     *
+     * @param  string  $primaryShortCode The debit party, the merchant's till (organization sending money) shortCode/tillNumber
+     * @param  string  $receiverShortCode The credit party, the vendor (payBill Account) receiving the amount from the merchant
+     * @param  string  $amount Amount to be sent to vendor
+     * @param  string  $paymentRef Reference to the payment being made (appears in the text for easy reference by the merchant)
+     * @param  string  $callbackUrl The endpoint from the vendor system that will be used to send back the confirmation response
+     * @param  string  $partnerName The organization friendly name used by the vendor as known by the Merchant
+     * @param  string  $requestRefId Random unique identifier sent by the vendor system for tracking the process
+     * @return string JSON response containing the USSD push initiation status
+     */
+    public function b2bExpressCheckout($primaryShortCode, $receiverShortCode, $amount, $paymentRef, $callbackUrl, $partnerName, $requestRefId = null)
+    {
+        $arrayData = [
+            'primaryShortCode' => $primaryShortCode,
+            'receiverShortCode' => $receiverShortCode,
+            'amount' => $amount,
+            'paymentRef' => $paymentRef,
+            'callbackUrl' => $callbackUrl,
+            'partnerName' => $partnerName,
+            'RequestRefID' => $requestRefId ?? $this->generateRequestRefId(),
+        ];
+
+        $response = $this->setHttpResponse('/v1/ussdpush/get-msisdn', 'POST', $arrayData);
+
+        return $response;
+    }
+
+    /**
+     * Generate a unique request reference ID for B2B Express Checkout
+     *
+     * @return string Unique identifier
+     */
+    private function generateRequestRefId()
+    {
+        return uniqid('b2b_express_', true);
+    }
 }
