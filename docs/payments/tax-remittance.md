@@ -170,9 +170,9 @@ $corporateTaxResponse = $mpesa->taxRemittance(
 | `CommandID` | 'PayTaxToKRA' | Specifies tax remittance transaction type |
 | `Initiator` | From config | M-Pesa API operator username |
 | `SecurityCredential` | Encrypted | Encrypted initiator password |
-| `SenderIdentifierType` | '4' | Type of sender shortcode (fixed) |
-| `RecieverIdentifierType` | '4' | Type of receiver shortcode (fixed) |
-| `PartyA` | From config | Your business shortcode |
+| `SenderIdentifierType`    | '4'           | Type of sender shortcode (fixed)   |
+| `ReceiverIdentifierType`  | '4'           | Type of receiver shortcode (fixed) |
+| `PartyA`                  | From config   | Your business shortcode            |
 | `PartyB` | '572572' | KRA shortcode (fixed) |
 
 ## Response Format
