@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests;
+namespace Itsmurumba\Mpesa\Tests;
 
 use PHPUnit\Framework\TestCase as BaseTestCase;
 

@@ -289,7 +289,7 @@ class Mpesa
             $accessToken = $this->getAccessToken();
         }
 
-        $authBearer = 'Bearer '.$accessToken;
+        $authBearer = 'Bearer ' . $accessToken;
 
         $this->client = new Client(
             [
@@ -318,7 +318,7 @@ class Mpesa
         }
 
         $response = $this->client->{strtolower($method)}(
-            $this->baseUrl.$relativeUrl,
+            $this->baseUrl . $relativeUrl,
             [
                 'body' => json_encode($data),
             ]
@@ -333,9 +333,9 @@ class Mpesa
     private function getAccessToken()
     {
         $response = Http::withHeaders([
-            'Authorization' => 'Basic '.base64_encode($this->consumerKey.':'.$this->consumerSecret),
+            'Authorization' => 'Basic ' . base64_encode($this->consumerKey . ':' . $this->consumerSecret),
         ])->get(
-            $this->baseUrl.'/oauth/v1/generate?grant_type=client_credentials'
+            $this->baseUrl . '/oauth/v1/generate?grant_type=client_credentials'
         );
 
         if ($response->status() == 200) {
@@ -362,9 +362,9 @@ class Mpesa
     private function setSecurityCredentials()
     {
         if ($this->environment == 'production') {
-            $publicKey = File::get(__DIR__.'/certificates/production.cer');
+            $publicKey = File::get(__DIR__ . '/certificates/production.cer');
         } else {
-            $publicKey = File::get(__DIR__.'/certificates/sandbox.cer');
+            $publicKey = File::get(__DIR__ . '/certificates/sandbox.cer');
         }
 
         openssl_public_encrypt($this->initiatorPassword, $encryptedData, $publicKey, OPENSSL_PKCS1_PADDING);
@@ -389,7 +389,7 @@ class Mpesa
 
         $arrayData = [
             'BusinessShortCode' => $this->lipaNaMpesaShortcode,
-            'Password' => base64_encode($this->lipaNaMpesaShortcode.$this->lipaNaMpesaPasskey.$timestamp),
+            'Password' => base64_encode($this->lipaNaMpesaShortcode . $this->lipaNaMpesaPasskey . $timestamp),
             'Timestamp' => $timestamp,
             'TransactionType' => 'CustomerPayBillOnline',
             'Amount' => $amount,
@@ -419,7 +419,7 @@ class Mpesa
 
         $arrayData = [
             'BusinessShortCode' => $this->lipaNaMpesaShortcode,
-            'Password' => base64_encode($this->lipaNaMpesaShortcode.$this->lipaNaMpesaPasskey.$timestamp),
+            'Password' => base64_encode($this->lipaNaMpesaShortcode . $this->lipaNaMpesaPasskey . $timestamp),
             'Timestamp' => $timestamp,
             'CheckoutRequestID' => $checkoutRequestId,
         ];
@@ -646,7 +646,7 @@ class Mpesa
         $supportedTransactionTypes = ['BG', 'WA', 'PB', 'SM', 'SB'];
 
         if (! in_array($transactionType, $supportedTransactionTypes)) {
-            throw new InvalidArgumentException('Invalid transaction type. Supported types are: '.implode(', ', $supportedTransactionTypes));
+            throw new InvalidArgumentException('Invalid transaction type. Supported types are: ' . implode(', ', $supportedTransactionTypes));
         }
 
         $data = [
@@ -700,11 +700,11 @@ class Mpesa
         $validReceiverPartyIdentifierType = ['2', '4'];
 
         if (! in_array($frequency, $validFrequencies)) {
-            throw new InvalidArgumentException('Invalid frequency. Supported values are: '.implode(', ', $validFrequencies));
+            throw new InvalidArgumentException('Invalid frequency. Supported values are: ' . implode(', ', $validFrequencies));
         }
 
         if (! in_array($receiverPartyIdentifierType, $validReceiverPartyIdentifierType)) {
-            throw new InvalidArgumentException('Invalid receiver Party Identifier Type. Supported values are: '.implode(', ', $validReceiverPartyIdentifierType));
+            throw new InvalidArgumentException('Invalid receiver Party Identifier Type. Supported values are: ' . implode(', ', $validReceiverPartyIdentifierType));
         }
 
         $data = [
@@ -838,7 +838,7 @@ class Mpesa
             $missingFields = array_diff($requiredFields, array_keys($invoice));
             if (! empty($missingFields)) {
                 throw new InvalidArgumentException(
-                    'Missing required fields: '.implode(', ', $missingFields)
+                    'Missing required fields: ' . implode(', ', $missingFields)
                 );
             }
         }
@@ -947,5 +947,77 @@ class Mpesa
         $response = $this->setHttpResponse('/v1/billmanager-invoice/change-optin-details', 'POST', $data);
 
         return $response;
+    }
+
+    /**
+     * Tax Remittance API enables businesses to remit tax to Kenya Revenue Authority (KRA).
+     * This API requires prior integration with KRA for tax declaration, payment registration number (PRN) generation,
+     * and exchange of other tax-related information.
+     *
+     * @param  string  $amount The transaction amount to be remitted to KRA
+     * @param  string  $accountReference The payment registration number (PRN) issued by KRA
+     * @param  string  $remarks Any additional information to be associated with the transaction (max 100 characters)
+     * @return string JSON response containing the tax remittance status
+     */
+    public function taxRemittance($amount, $accountReference, $remarks = 'Tax Remittance to KRA')
+    {
+        $arrayData = [
+            'Initiator' => $this->initiatorUsername,
+            'SecurityCredential' => $this->setSecurityCredentials(),
+            'CommandID' => 'PayTaxToKRA',
+            'SenderIdentifierType' => '4',
+            'RecieverIdentifierType' => '4',
+            'Amount' => $amount,
+            'PartyA' => $this->lipaNaMpesaShortcode,
+            'PartyB' => '572572',
+            'AccountReference' => $accountReference,
+            'Remarks' => $remarks,
+            'QueueTimeOutURL' => $this->queueTimeOutURL,
+            'ResultURL' => $this->resultURL,
+        ];
+
+        $response = $this->setHttpResponse('/mpesa/b2b/v1/remittax', 'POST', $arrayData);
+
+        return $response;
+    }
+
+    /**
+     * B2B Express Checkout (USSD Push to Till) enables merchants to initiate USSD Push to till,
+     * enabling their fellow merchants to pay from their own till numbers to the vendor's paybill.
+     *
+     * @param  string  $primaryShortCode The debit party, the merchant's till (organization sending money) shortCode/tillNumber
+     * @param  string  $receiverShortCode The credit party, the vendor (payBill Account) receiving the amount from the merchant
+     * @param  string  $amount Amount to be sent to vendor
+     * @param  string  $paymentRef Reference to the payment being made (appears in the text for easy reference by the merchant)
+     * @param  string  $callbackUrl The endpoint from the vendor system that will be used to send back the confirmation response
+     * @param  string  $partnerName The organization friendly name used by the vendor as known by the Merchant
+     * @param  string  $requestRefId Random unique identifier sent by the vendor system for tracking the process
+     * @return string JSON response containing the USSD push initiation status
+     */
+    public function b2bExpressCheckout($primaryShortCode, $receiverShortCode, $amount, $paymentRef, $callbackUrl, $partnerName, $requestRefId = null)
+    {
+        $arrayData = [
+            'primaryShortCode' => $primaryShortCode,
+            'receiverShortCode' => $receiverShortCode,
+            'amount' => $amount,
+            'paymentRef' => $paymentRef,
+            'callbackUrl' => $callbackUrl,
+            'partnerName' => $partnerName,
+            'RequestRefID' => $requestRefId ?? $this->generateRequestRefId(),
+        ];
+
+        $response = $this->setHttpResponse('/v1/ussdpush/get-msisdn', 'POST', $arrayData);
+
+        return $response;
+    }
+
+    /**
+     * Generate a unique request reference ID for B2B Express Checkout
+     *
+     * @return string Unique identifier
+     */
+    private function generateRequestRefId()
+    {
+        return uniqid('b2b_express_', true);
     }
 }
