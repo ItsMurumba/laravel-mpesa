@@ -26,7 +26,7 @@ export default defineConfig({
                 collapsed: false,
                 items: [
                     {text: 'Getting Started', link: '/introduction/getting-started'},
-                    {text: 'Progress', link: '/introduction/progress'},
+                    {text: 'Roadmap', link: '/introduction/roadmap'},
                 ]
             },
             {
