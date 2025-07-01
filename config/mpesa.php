@@ -9,7 +9,7 @@ return [
     | Consumer Key of the App from developer.safaricom.co.ke
     |
     */
-    'consumerKey' => getenv('MPESA_CONSUMER_KEY'),
+    'consumerKey' => env('MPESA_CONSUMER_KEY'),
 
     /*
     |--------------------------------------------------------------------------
@@ -19,7 +19,7 @@ return [
     | Consumer Secret of the App from developer.safaricom.co.ke
     |
     */
-    'consumerSecret' => getenv('MPESA_CONSUMER_SECRET'),
+    'consumerSecret' => env('MPESA_CONSUMER_SECRET'),
 
     /*
     |--------------------------------------------------------------------------
@@ -31,7 +31,7 @@ return [
     | M-Pesa API.
     |
     */
-    'callBackURL' => getenv('MPESA_CALLBACK_URL'),
+    'callBackURL' => env('MPESA_CALLBACK_URL'),
 
     /*
     |--------------------------------------------------------------------------
@@ -41,7 +41,7 @@ return [
     | Base URL for Mpesa API Calls
     |
     */
-    'baseUrl' => getenv('MPESA_BASE_URL', 'https://sandbox.safaricom.co.ke'),
+    'baseUrl' => env('MPESA_BASE_URL', 'https://sandbox.safaricom.co.ke'),
 
     /*
     |--------------------------------------------------------------------------
@@ -51,7 +51,7 @@ return [
     | Your M-Pesa Paybill Number
     |
     */
-    'paybillNumber' => getenv('MPESA_PAYBILL_NUMBER'),
+    'paybillNumber' => env('MPESA_PAYBILL_NUMBER'),
 
     /*
     |--------------------------------------------------------------------------
@@ -61,7 +61,7 @@ return [
     | Lipa na Mpesa Shortcode (Paybill or Till Number)
     |
     */
-    'lipaNaMpesaShortcode' => getenv('LIPA_NA_MPESA_SHORTCODE'),
+    'lipaNaMpesaShortcode' => env('LIPA_NA_MPESA_SHORTCODE'),
 
     /*
     |--------------------------------------------------------------------------
@@ -71,7 +71,7 @@ return [
     | Callback URL for Lipa na Mpesa transactions
     |
     */
-    'lipaNaMpesaCallbackURL' => getenv('LIPA_NA_MPESA_CALLBACK_URL'),
+    'lipaNaMpesaCallbackURL' => env('LIPA_NA_MPESA_CALLBACK_URL'),
 
     /*
     |--------------------------------------------------------------------------
@@ -81,7 +81,7 @@ return [
     | Passkey for Lipa na Mpesa transactions
     |
     */
-    'lipaNaMpesaPasskey' => getenv('LIPA_NA_MPESA_PASSKEY'),
+    'lipaNaMpesaPasskey' => env('LIPA_NA_MPESA_PASSKEY'),
 
     /*
     |--------------------------------------------------------------------------
@@ -91,7 +91,7 @@ return [
     | URL for C2B transaction confirmations
     |
     */
-    'confirmationURL' => getenv('MPESA_CONFIRMATION_URL'),
+    'confirmationURL' => env('MPESA_CONFIRMATION_URL'),
 
     /*
     |--------------------------------------------------------------------------
@@ -101,7 +101,7 @@ return [
     | URL for C2B transaction validations
     |
     */
-    'validationURL' => getenv('MPESA_VALIDATION_URL'),
+    'validationURL' => env('MPESA_VALIDATION_URL'),
 
     /*
     |--------------------------------------------------------------------------
@@ -111,7 +111,7 @@ return [
     | Username for initiating M-Pesa transactions
     |
     */
-    'initiatorUsername' => getenv('MPESA_INITIATOR_USERNAME'),
+    'initiatorUsername' => env('MPESA_INITIATOR_USERNAME'),
 
     /*
     |--------------------------------------------------------------------------
@@ -121,7 +121,7 @@ return [
     | Password for initiating M-Pesa transactions
     |
     */
-    'initiatorPassword' => getenv('MPESA_INITIATOR_PASSWORD'),
+    'initiatorPassword' => env('MPESA_INITIATOR_PASSWORD'),
 
     /*
     |--------------------------------------------------------------------------
@@ -131,7 +131,7 @@ return [
     | M-Pesa API environment (sandbox or production)
     |
     */
-    'environment' => getenv('MPESA_ENVIRONMENT', 'sandbox'),
+    'environment' => env('MPESA_ENVIRONMENT', 'sandbox'),
 
     /*
     |--------------------------------------------------------------------------
@@ -141,7 +141,7 @@ return [
     | URL for queue timeout notifications
     |
     */
-    'queueTimeOutURL' => getenv('MPESA_QUEUE_TIMEOUT_URL'),
+    'queueTimeOutURL' => env('MPESA_QUEUE_TIMEOUT_URL'),
 
     /*
     |--------------------------------------------------------------------------
@@ -151,5 +151,5 @@ return [
     | URL for transaction results
     |
     */
-    'resultURL' => getenv('MPESA_RESULT_URL'),
+    'resultURL' => env('MPESA_RESULT_URL'),
 ];
