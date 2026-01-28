@@ -31,9 +31,14 @@ class MpesaServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->bind('laravel-mpesa', function () {
+        // Manager used by the facade: Mpesa::for('profile-key')->...
+        $this->app->singleton('mpesa', function () {
+            return new MpesaManager();
+        });
 
-            return new Mpesa();
+        // Backwards compatible binding for anyone resolving the original service.
+        $this->app->bind('laravel-mpesa', function ($app) {
+            return $app->make('mpesa')->defaultInstance();
         });
     }
 
@@ -44,6 +49,6 @@ class MpesaServiceProvider extends ServiceProvider
     public function provides()
     {
 
-        return ['laravel-mpesa'];
+        return ['laravel-mpesa', 'mpesa'];
     }
 }

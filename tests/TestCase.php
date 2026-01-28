@@ -27,7 +27,7 @@ abstract class TestCase extends Orchestra
 
     protected function defineEnvironment($app)
     {
-        $app['config']->set('mpesa', [
+        $base = [
             'consumerKey' => 'key',
             'consumerSecret' => 'secret',
             'callBackURL' => 'https://example.test/callback',
@@ -43,6 +43,14 @@ abstract class TestCase extends Orchestra
             'environment' => 'sandbox',
             'queueTimeOutURL' => 'https://example.test/timeout',
             'resultURL' => 'https://example.test/result',
-        ]);
+        ];
+
+        // Support both legacy single-config and new profiles config.
+        $app['config']->set('mpesa', array_merge($base, [
+            'default_profile' => 'default',
+            'profiles' => [
+                'default' => $base,
+            ],
+        ]));
     }
 }

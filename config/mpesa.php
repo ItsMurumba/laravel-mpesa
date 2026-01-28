@@ -3,6 +3,19 @@
 return [
     /*
     |--------------------------------------------------------------------------
+    | Default Profile
+    |--------------------------------------------------------------------------
+    |
+    | When using multi-tenant / multi-shortcode setups, you can define multiple
+    | Mpesa profiles under `profiles` and choose which one to use at runtime.
+    |
+    | `Mpesa::for('tenant-a')` will use the profile with that key.
+    |
+    */
+    'default_profile' => env('MPESA_DEFAULT_PROFILE', 'default'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Consumer Key
     |--------------------------------------------------------------------------
     |
@@ -152,4 +165,37 @@ return [
     |
     */
     'resultURL' => env('MPESA_RESULT_URL'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Profiles (Multi-tenant)
+    |--------------------------------------------------------------------------
+    |
+    | Define one or more Mpesa profiles. This is useful for SaaS platforms where
+    | each customer has their own paybill/till, keys, callbacks, etc.
+    |
+    | NOTE:
+    | - Root-level keys above remain supported for backwards compatibility.
+    | - If a profile is selected, its keys override root-level keys.
+    |
+    */
+    'profiles' => [
+        'default' => [
+            'consumerKey' => env('MPESA_CONSUMER_KEY'),
+            'consumerSecret' => env('MPESA_CONSUMER_SECRET'),
+            'callBackURL' => env('MPESA_CALLBACK_URL'),
+            'baseUrl' => env('MPESA_BASE_URL', 'https://sandbox.safaricom.co.ke'),
+            'paybillNumber' => env('MPESA_PAYBILL_NUMBER'),
+            'lipaNaMpesaShortcode' => env('LIPA_NA_MPESA_SHORTCODE'),
+            'lipaNaMpesaCallbackURL' => env('LIPA_NA_MPESA_CALLBACK_URL'),
+            'lipaNaMpesaPasskey' => env('LIPA_NA_MPESA_PASSKEY'),
+            'confirmationURL' => env('MPESA_CONFIRMATION_URL'),
+            'validationURL' => env('MPESA_VALIDATION_URL'),
+            'initiatorUsername' => env('MPESA_INITIATOR_USERNAME'),
+            'initiatorPassword' => env('MPESA_INITIATOR_PASSWORD'),
+            'environment' => env('MPESA_ENVIRONMENT', 'sandbox'),
+            'queueTimeOutURL' => env('MPESA_QUEUE_TIMEOUT_URL'),
+            'resultURL' => env('MPESA_RESULT_URL'),
+        ],
+    ],
 ];

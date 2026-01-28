@@ -12,6 +12,16 @@ use Itsmurumba\Mpesa\Exceptions\IsNullException;
 class Mpesa
 {
     /**
+     * Resolved configuration for this Mpesa instance (profile + overrides applied).
+     */
+    protected $config = [];
+
+    /**
+     * The selected profile name (if any).
+     */
+    protected $profile;
+
+    /**
      * Consumer Key from the app on developer.safaricom.co.ke
      */
     protected $consumerKey;
@@ -66,7 +76,7 @@ class Mpesa
     /**
      * Lipa na Mpesa Callback URL
      */
-    protected $çç;
+    // (property removed - use $lipaNaMpesaCallbackURL)
 
     /**
      * Lipa na Mpesa Passkey
@@ -113,8 +123,17 @@ class Mpesa
 
     protected $lipaNaMpesaCallbackURL;
 
-    public function __construct()
+    /**
+     * Create an Mpesa client for a specific profile.
+     *
+     * @param  string|null  $profile
+     * @param  array  $overrides
+     */
+    public function __construct($profile = null, array $overrides = [])
     {
+        $this->profile = $profile;
+        $this->config = $this->resolveConfig($profile, $overrides);
+
         $this->setConsumerKey();
         $this->setConsumerSecret();
         $this->setBaseUrl();
@@ -134,11 +153,42 @@ class Mpesa
     }
 
     /**
+     * Resolve config for a given profile (supports multi-profile + legacy config).
+     */
+    protected function resolveConfig($profile = null, array $overrides = [])
+    {
+        $root = (array) Config::get('mpesa', []);
+
+        $profiles = [];
+        if (isset($root['profiles']) && is_array($root['profiles'])) {
+            $profiles = $root['profiles'];
+        }
+
+        // Root keys are defaults. Profile keys override root keys.
+        $resolved = $root;
+        unset($resolved['profiles'], $resolved['default_profile']);
+
+        if (! empty($profiles)) {
+            $defaultProfile = isset($root['default_profile']) ? $root['default_profile'] : 'default';
+            $profileName = $profile ?: $defaultProfile;
+            if (isset($profiles[$profileName]) && is_array($profiles[$profileName])) {
+                $resolved = array_merge($resolved, $profiles[$profileName]);
+            }
+        }
+
+        if (! empty($overrides)) {
+            $resolved = array_merge($resolved, $overrides);
+        }
+
+        return $resolved;
+    }
+
+    /**
      * Get the consumer key from mpesa config file.
      */
     public function setConsumerKey()
     {
-        $this->consumerKey = Config::get('mpesa.consumerKey');
+        $this->consumerKey = $this->configValue('consumerKey');
     }
 
     /**
@@ -146,7 +196,7 @@ class Mpesa
      */
     public function setConsumerSecret()
     {
-        $this->consumerSecret = Config::get('mpesa.consumerSecret');
+        $this->consumerSecret = $this->configValue('consumerSecret');
     }
 
     /**
@@ -154,7 +204,7 @@ class Mpesa
      */
     public function setBaseUrl()
     {
-        $this->baseUrl = Config::get('mpesa.baseUrl');
+        $this->baseUrl = $this->configValue('baseUrl');
     }
 
     /**
@@ -162,7 +212,7 @@ class Mpesa
      */
     public function setPaybillNumber()
     {
-        $this->payBillNumber = Config::get('mpesa.paybillNumber');
+        $this->payBillNumber = $this->configValue('paybillNumber');
     }
 
     /**
@@ -170,7 +220,7 @@ class Mpesa
      */
     public function setCallBackURL()
     {
-        $this->callBackURL = Config::get('mpesa.callBackURL');
+        $this->callBackURL = $this->configValue('callBackURL');
     }
 
     /**
@@ -180,7 +230,7 @@ class Mpesa
      */
     public function setLipaNaMpesaShortcode()
     {
-        $this->lipaNaMpesaShortcode = Config::get('mpesa.lipaNaMpesaShortcode');
+        $this->lipaNaMpesaShortcode = $this->configValue('lipaNaMpesaShortcode');
     }
 
     /**
@@ -190,7 +240,7 @@ class Mpesa
      */
     public function setLipaNaMpesaCallbackURL()
     {
-        $this->lipaNaMpesaCallbackURL = Config::get('mpesa.lipaNaMpesaCallbackURL');
+        $this->lipaNaMpesaCallbackURL = $this->configValue('lipaNaMpesaCallbackURL');
     }
 
     /**
@@ -200,7 +250,7 @@ class Mpesa
      */
     public function setLipaNaMpesaPasskey()
     {
-        $this->lipaNaMpesaPasskey = Config::get('mpesa.lipaNaMpesaPasskey');
+        $this->lipaNaMpesaPasskey = $this->configValue('lipaNaMpesaPasskey');
     }
 
     /**
@@ -211,7 +261,7 @@ class Mpesa
      */
     public function setConfirmationURL()
     {
-        $this->confirmationURL = Config::get('mpesa.confirmationURL');
+        $this->confirmationURL = $this->configValue('confirmationURL');
     }
 
     /**
@@ -224,7 +274,7 @@ class Mpesa
      */
     public function setValidationURL()
     {
-        $this->validationURL = Config::get('mpesa.validationURL');
+        $this->validationURL = $this->configValue('validationURL');
     }
 
     /**
@@ -234,7 +284,7 @@ class Mpesa
      */
     private function setInitiatorUsername()
     {
-        $this->initiatorUsername = Config::get('mpesa.initiatorUsername');
+        $this->initiatorUsername = $this->configValue('initiatorUsername');
     }
 
     /**
@@ -244,7 +294,7 @@ class Mpesa
      */
     private function setInitiatorPassword()
     {
-        $this->initiatorPassword = Config::get('mpesa.initiatorPassword');
+        $this->initiatorPassword = $this->configValue('initiatorPassword');
     }
 
     /**
@@ -254,7 +304,7 @@ class Mpesa
      */
     public function setEnvironment()
     {
-        $this->environment = Config::get('mpesa.environment');
+        $this->environment = $this->configValue('environment');
     }
 
     /**
@@ -264,7 +314,7 @@ class Mpesa
      */
     public function setQueueTimeOutURL()
     {
-        $this->queueTimeOutURL = Config::get('mpesa.queueTimeOutURL');
+        $this->queueTimeOutURL = $this->configValue('queueTimeOutURL');
     }
 
     /**
@@ -274,7 +324,16 @@ class Mpesa
      */
     public function setResultURL()
     {
-        $this->resultURL = Config::get('mpesa.resultURL');
+        $this->resultURL = $this->configValue('resultURL');
+    }
+
+    protected function configValue($key, $default = null)
+    {
+        if (array_key_exists($key, $this->config)) {
+            return $this->config[$key];
+        }
+
+        return $default;
     }
 
     /**

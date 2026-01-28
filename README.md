@@ -58,6 +58,34 @@ MPESA_QUEUE_TIMEOUT_URL=
 MPESA_RESULT_URL=
 ````
 
+## Multi-tenant / multiple paybills & tills (Profiles)
+
+For SaaS / multi-merchant use cases, you can define multiple Mpesa **profiles** in `config/mpesa.php` (under `profiles`) and pick one at runtime.
+
+```php
+// config/mpesa.php
+return [
+    'default_profile' => env('MPESA_DEFAULT_PROFILE', 'default'),
+
+    'profiles' => [
+        'default' => [
+            'consumerKey' => env('MPESA_CONSUMER_KEY'),
+            'consumerSecret' => env('MPESA_CONSUMER_SECRET'),
+            'lipaNaMpesaShortcode' => env('LIPA_NA_MPESA_SHORTCODE'),
+            'lipaNaMpesaPasskey' => env('LIPA_NA_MPESA_PASSKEY'),
+            // ...
+        ],
+
+        'tenant_a' => [
+            'consumerKey' => env('TENANT_A_MPESA_CONSUMER_KEY'),
+            'consumerSecret' => env('TENANT_A_MPESA_CONSUMER_SECRET'),
+            'lipaNaMpesaShortcode' => env('TENANT_A_LIPA_NA_MPESA_SHORTCODE'),
+            'lipaNaMpesaPasskey' => env('TENANT_A_LIPA_NA_MPESA_PASSKEY'),
+        ],
+    ],
+];
+```
+
 # Usage
 Add the following constructor inside your controller:
 `````
@@ -67,6 +95,14 @@ public function __construct(){
     $this->mpesa = new Mpesa();
 }
 `````
+
+### Using profiles (recommended for SaaS)
+
+```php
+use Itsmurumba\Mpesa\Facades\Mpesa;
+
+Mpesa::for('tenant_a')->expressPayment($amount, $phoneNumber);
+```
 
 **1. Mpesa Express Payment (Lipa Na Mpesa Online)**
 ````
