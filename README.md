@@ -87,17 +87,87 @@ return [
 ```
 
 # Usage
-Add the following constructor inside your controller:
-`````
-protected $mpesa;
 
-public function __construct(){
-    $this->mpesa = new Mpesa();
+## Single Paybill/Till Setup (Traditional)
+
+For applications with a single Mpesa account:
+
+```php
+use Itsmurumba\Mpesa\Mpesa;
+
+// Direct instantiation
+$mpesa = new Mpesa();
+$mpesa->expressPayment($amount, $phoneNumber);
+
+// Or via constructor injection
+class PaymentController
+{
+    protected $mpesa;
+
+    public function __construct()
+    {
+        $this->mpesa = new Mpesa();
+    }
 }
-`````
+```
 
-### Using profiles (recommended for SaaS)
+## Multi-tenant / SaaS Setup
 
+For SaaS platforms where each customer has their own Mpesa account:
+
+### Option 1: Database-driven (Recommended)
+
+**Setup:**
+```bash
+# Publish and run migration
+php artisan vendor:publish --tag=mpesa-migrations
+php artisan migrate
+
+# Enable in .env
+MPESA_USE_DATABASE=true
+```
+
+**Store tenant profiles:**
+```php
+DB::table('mpesa_profiles')->insert([
+    'name' => 'tenant-slug-or-id',
+    'consumer_key' => 'key',
+    'consumer_secret' => 'secret',
+    'lipa_na_mpesa_shortcode' => '123456',
+    'lipa_na_mpesa_passkey' => 'passkey',
+    'environment' => 'sandbox',
+    'is_active' => true,
+    // ... other fields
+]);
+```
+
+**Usage:**
+```php
+use Itsmurumba\Mpesa\Facades\Mpesa;
+
+// Use tenant-specific profile
+Mpesa::for('tenant-slug-or-id')->expressPayment($amount, $phoneNumber);
+Mpesa::for('tenant-slug-or-id')->b2cPayment(...);
+```
+
+### Option 2: Config-based (Static profiles)
+
+For a small, fixed number of tenants, define in `config/mpesa.php`:
+
+```php
+return [
+    'profiles' => [
+        'tenant_a' => [
+            'consumerKey' => env('TENANT_A_CONSUMER_KEY'),
+            'consumerSecret' => env('TENANT_A_CONSUMER_SECRET'),
+            'lipaNaMpesaShortcode' => env('TENANT_A_SHORTCODE'),
+            // ...
+        ],
+    ],
+];
+```
+
+**Usage:**
 ```php
 use Itsmurumba\Mpesa\Facades\Mpesa;
 
