@@ -11,7 +11,9 @@
 |
 */
 
-pest()->extend(Itsmurumba\Mpesa\Tests\TestCase::class)->in('Feature');
+pest()->extend(Itsmurumba\Mpesa\Tests\TestCase::class)->in('Feature', 'Unit');
+
+require_once __DIR__ . '/Unit/Mpesa/_helpers.php';
 
 /*
 |--------------------------------------------------------------------------
