@@ -14,7 +14,8 @@
         "laravel 8",
         "laravel 9",
         "laravel 10",
-        "laravel 11"
+        "laravel 11",
+        "laravel 12"
     ],
     "autoload": {
         "psr-4": {
@@ -33,8 +34,8 @@
         }
     ],
     "require": {
-        "php": "^7.1|^8.0|^8.1|^8.2",
-        "illuminate/support": "^5.0|^6.0|^7.0|^8.0|^9.0|^10.0|^11.0",
+        "php": "^7.1|^8.0|^8.1|^8.2|^8.3|^8.4",
+        "illuminate/support": "^5.0|^6.0|^7.0|^8.0|^9.0|^10.0|^11.0|^12.0",
         "guzzlehttp/guzzle": "^6.0|^7.0"
     },
     "require-dev": {
