@@ -39,6 +39,7 @@
         "guzzlehttp/guzzle": "^6.0|^7.0"
     },
     "require-dev": {
+        "orchestra/testbench": "^10.0",
         "pestphp/pest": "^3.8"
     },
     "scripts": {

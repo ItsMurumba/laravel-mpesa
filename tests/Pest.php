@@ -11,7 +11,7 @@
 |
 */
 
-pest()->extend(Itsmurumba\Mpesa\Tests\TestCase::class)->in('Feature');
+pest()->extend(Itsmurumba\Mpesa\Tests\TestCase::class)->in('Feature', 'Unit');
 
 /*
 |--------------------------------------------------------------------------
