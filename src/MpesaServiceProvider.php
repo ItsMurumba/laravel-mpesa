@@ -14,11 +14,18 @@ class MpesaServiceProvider extends ServiceProvider
     public function boot()
     {
         $config = realpath(__DIR__ . '/../config/mpesa.php');
+        $migrations = realpath(__DIR__ . '/../database/migrations');
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 $config => $this->app->configPath('mpesa.php')
             ], 'mpesa-config');
+
+            if ($migrations) {
+                $this->publishes([
+                    $migrations => $this->app->databasePath('migrations')
+                ], 'mpesa-migrations');
+            }
 
             $this->commands([
                 InstallMpesaPackage::class,

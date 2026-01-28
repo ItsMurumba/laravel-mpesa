@@ -4,6 +4,7 @@ namespace Itsmurumba\Mpesa;
 
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
@@ -153,26 +154,39 @@ class Mpesa
     }
 
     /**
-     * Resolve config for a given profile (supports multi-profile + legacy config).
+     * Resolve config for a given profile (supports database + config-based profiles).
      */
     protected function resolveConfig($profile = null, array $overrides = [])
     {
         $root = (array) Config::get('mpesa', []);
 
-        $profiles = [];
-        if (isset($root['profiles']) && is_array($root['profiles'])) {
-            $profiles = $root['profiles'];
-        }
-
         // Root keys are defaults. Profile keys override root keys.
         $resolved = $root;
-        unset($resolved['profiles'], $resolved['default_profile']);
+        unset($resolved['profiles'], $resolved['default_profile'], $resolved['use_database']);
 
-        if (! empty($profiles)) {
-            $defaultProfile = isset($root['default_profile']) ? $root['default_profile'] : 'default';
-            $profileName = $profile ?: $defaultProfile;
-            if (isset($profiles[$profileName]) && is_array($profiles[$profileName])) {
-                $resolved = array_merge($resolved, $profiles[$profileName]);
+        $useDatabase = isset($root['use_database']) && $root['use_database'] === true;
+
+        // Check database first if enabled
+        if ($useDatabase && $profile) {
+            $dbProfile = $this->resolveFromDatabase($profile);
+            if ($dbProfile) {
+                $resolved = array_merge($resolved, $dbProfile);
+            }
+        }
+
+        // Fall back to config-based profiles if DB didn't resolve or DB is disabled
+        if (! $useDatabase || ! isset($dbProfile) || ! $dbProfile) {
+            $profiles = [];
+            if (isset($root['profiles']) && is_array($root['profiles'])) {
+                $profiles = $root['profiles'];
+            }
+
+            if (! empty($profiles)) {
+                $defaultProfile = isset($root['default_profile']) ? $root['default_profile'] : 'default';
+                $profileName = $profile ?: $defaultProfile;
+                if (isset($profiles[$profileName]) && is_array($profiles[$profileName])) {
+                    $resolved = array_merge($resolved, $profiles[$profileName]);
+                }
             }
         }
 
@@ -181,6 +195,52 @@ class Mpesa
         }
 
         return $resolved;
+    }
+
+    /**
+     * Resolve profile configuration from database.
+     *
+     * @param  string  $profileName
+     * @return array|null
+     */
+    protected function resolveFromDatabase($profileName)
+    {
+        try {
+            if (! DB::getSchemaBuilder()->hasTable('mpesa_profiles')) {
+                return null;
+            }
+
+            $profile = DB::table('mpesa_profiles')
+                ->where('name', $profileName)
+                ->where('is_active', true)
+                ->first();
+
+            if (! $profile) {
+                return null;
+            }
+
+            // Map database columns to config keys
+            return [
+                'consumerKey' => $profile->consumer_key,
+                'consumerSecret' => $profile->consumer_secret,
+                'baseUrl' => $profile->base_url,
+                'paybillNumber' => $profile->paybill_number,
+                'lipaNaMpesaShortcode' => $profile->lipa_na_mpesa_shortcode,
+                'lipaNaMpesaPasskey' => $profile->lipa_na_mpesa_passkey,
+                'lipaNaMpesaCallbackURL' => $profile->lipa_na_mpesa_callback_url,
+                'callBackURL' => $profile->callback_url,
+                'confirmationURL' => $profile->confirmation_url,
+                'validationURL' => $profile->validation_url,
+                'initiatorUsername' => $profile->initiator_username,
+                'initiatorPassword' => $profile->initiator_password, // Note: Should be decrypted if encrypted
+                'environment' => $profile->environment,
+                'queueTimeOutURL' => $profile->queue_timeout_url,
+                'resultURL' => $profile->result_url,
+            ];
+        } catch (\Exception $e) {
+            // If DB lookup fails (e.g., table doesn't exist), fall back to config
+            return null;
+        }
     }
 
     /**

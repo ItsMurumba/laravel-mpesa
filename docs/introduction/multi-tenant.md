@@ -7,9 +7,52 @@ This package supports **multiple Mpesa configurations** ("profiles"). This is us
 - STK callback URL
 - Validation / confirmation URLs
 
-## Config: `mpesa.profiles`
+## Two Approaches
 
-Define profiles in `config/mpesa.php`:
+### 1. Database-driven (Recommended for SaaS)
+
+For dynamic tenants that are added/removed at runtime, use the database approach:
+
+**Step 1:** Publish and run the migration:
+
+```bash
+php artisan vendor:publish --tag=mpesa-migrations
+php artisan migrate
+```
+
+**Step 2:** Enable database lookups in `config/mpesa.php`:
+
+```php
+return [
+    'use_database' => env('MPESA_USE_DATABASE', true),
+    // ... rest of config
+];
+```
+
+**Step 3:** Store tenant profiles in the `mpesa_profiles` table:
+
+```php
+DB::table('mpesa_profiles')->insert([
+    'name' => 'tenant_a',
+    'consumer_key' => 'key-a',
+    'consumer_secret' => 'secret-a',
+    'lipa_na_mpesa_shortcode' => '111111',
+    'lipa_na_mpesa_passkey' => 'passkey-a',
+    'environment' => 'sandbox',
+    'is_active' => true,
+    // ... other fields
+]);
+```
+
+**Step 4:** Use profiles:
+
+```php
+Mpesa::for('tenant_a')->expressPayment($amount, $phoneNumber);
+```
+
+### 2. Config-based (Static profiles)
+
+For a small, fixed number of tenants, define profiles in `config/mpesa.php`:
 
 ```php
 return [

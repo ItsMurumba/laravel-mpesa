@@ -16,6 +16,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Use Database for Profiles
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, the package will check the `mpesa_profiles` table first
+    | before falling back to config-based profiles. Useful for SaaS platforms
+    | where tenants are added dynamically.
+    |
+    */
+    'use_database' => env('MPESA_USE_DATABASE', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Consumer Key
     |--------------------------------------------------------------------------
     |
