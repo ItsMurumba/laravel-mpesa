@@ -27,6 +27,7 @@ export default defineConfig({
                 items: [
                     {text: 'Getting Started', link: '/introduction/getting-started'},
                     {text: 'Multi-tenant / Profiles', link: '/introduction/multi-tenant'},
+                    {text: 'Releases', link: '/introduction/releases'},
                     {text: 'Roadmap', link: '/introduction/roadmap'},
                 ]
             },

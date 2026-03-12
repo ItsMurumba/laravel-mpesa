@@ -1,0 +1,51 @@
+name: Pre-release
+
+on:
+  push:
+    branches: [develop]
+
+permissions:
+  contents: write
+
+jobs:
+  pre-release:
+    name: Create pre-release
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip release]')"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Get next pre-release version
+        id: version
+        run: |
+          # Latest stable tag (exclude pre-release tags like v1.0.9-dev.1)
+          LATEST=$(git tag -l 'v*' | grep -v '\-dev\.' | sort -V | tail -n1)
+          LATEST=${LATEST:-v1.0.8}
+          LATEST=${LATEST#v}
+          PARTS=(${LATEST//./ })
+          MAJOR=${PARTS[0]:-1}
+          MINOR=${PARTS[1]:-0}
+          PATCH=${PARTS[2]:-8}
+          NEXT_PATCH=$((PATCH + 1))
+          BASE="v${MAJOR}.${MINOR}.${NEXT_PATCH}"
+          # Count existing pre-releases for this base
+          COUNT=$(git tag -l "${BASE}-dev.*" 2>/dev/null | wc -l | tr -d ' ')
+          N=$((COUNT + 1))
+          VERSION="${BASE}-dev.${N}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Pre-release version: ${VERSION}"
+
+      - name: Create tag and pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.version }} (pre-release)
+          generate_release_notes: true
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
