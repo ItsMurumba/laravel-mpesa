@@ -109,7 +109,7 @@ if (isset($this->accessToken) && strtotime($this->expiresIn) > time()) {
 
 ```json
 {
-   "access_token": "c9SQxWWhmdVRlyh0zh8gZDTkubVF",
+   "access_token": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
    "expires_in": "3599"
 }
 ```
@@ -118,7 +118,7 @@ if (isset($this->accessToken) && strtotime($this->expiresIn) > time()) {
 
 | Name | Description | Type | Sample Values |
 |------|-------------|------|---------------|
-| `access_token` | Access token to access other APIs | String | `c9SQxWWhmdVRlyh0zh8gZDTkubVF` |
+| `access_token` | Access token to access other APIs | String | `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
 | `expires_in` | Token expiry time in seconds | Integer | `3599` |
 
 ## Testing

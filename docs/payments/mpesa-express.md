@@ -58,7 +58,7 @@ Add these to your `.env` file:
 
 ```env
 MPESA_LIPA_NA_MPESA_SHORTCODE=174379
-MPESA_LIPA_NA_MPESA_PASSKEY=bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919
+MPESA_LIPA_NA_MPESA_PASSKEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 MPESA_LIPA_NA_MPESA_CALLBACK_URL=https://your-domain.com/mpesa/callback
 ```
 
@@ -245,7 +245,7 @@ For testing purposes, use the sandbox environment:
 ```php
 // Use sandbox credentials
 MPESA_LIPA_NA_MPESA_SHORTCODE=174379
-MPESA_LIPA_NA_MPESA_PASSKEY=bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919
+MPESA_LIPA_NA_MPESA_PASSKEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 MPESA_BASE_URL=https://sandbox.safaricom.co.ke
 ```
 
