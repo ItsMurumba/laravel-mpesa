@@ -2,6 +2,7 @@
 
 use Itsmurumba\Mpesa\Mpesa;
 use Itsmurumba\Mpesa\MpesaManager;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
 describe('Database Profiles', function () {
@@ -230,5 +231,58 @@ describe('Database Profiles', function () {
 
         $payload = json_decode($fakeClient->calls[0]['options']['body'], true);
         expect($payload['BusinessShortCode'])->toBe('222222');
+    });
+
+    it('uses database for default profile when no profile is provided', function () {
+        config()->set('mpesa.default_profile', 'tenant_default_db');
+
+        DB::table('mpesa_profiles')->insert([
+            'name' => 'tenant_default_db',
+            'consumer_key' => 'db-key',
+            'consumer_secret' => 'db-secret',
+            'base_url' => 'https://example.test',
+            'lipa_na_mpesa_shortcode' => '101010',
+            'lipa_na_mpesa_passkey' => 'db-passkey',
+            'lipa_na_mpesa_callback_url' => 'https://example.test/default-db-callback',
+            'environment' => 'sandbox',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $mpesa = new Mpesa(); // no profile passed
+
+        $calls = [];
+        $fakeClient = makeFakeGuzzleClient($calls);
+        setProtected($mpesa, 'client', $fakeClient);
+        setProtected($mpesa, 'baseUrl', 'https://example.test');
+
+        $mpesa->expressPayment(100, '254700000000');
+
+        $payload = json_decode($fakeClient->calls[0]['options']['body'], true);
+        expect($payload['BusinessShortCode'])->toBe('101010');
+        expect($payload['CallBackURL'])->toBe('https://example.test/default-db-callback');
+    });
+
+    it('decrypts initiator password when stored encrypted', function () {
+        $encrypted = Crypt::encryptString('plain-password');
+
+        DB::table('mpesa_profiles')->insert([
+            'name' => 'tenant_encrypted',
+            'consumer_key' => 'db-key',
+            'consumer_secret' => 'db-secret',
+            'base_url' => 'https://example.test',
+            'lipa_na_mpesa_shortcode' => '202020',
+            'lipa_na_mpesa_passkey' => 'db-passkey',
+            'initiator_password' => $encrypted,
+            'environment' => 'sandbox',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $mpesa = new Mpesa('tenant_encrypted');
+
+        expect(getProtected($mpesa, 'initiatorPassword'))->toBe('plain-password');
     });
 });

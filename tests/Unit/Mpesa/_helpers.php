@@ -39,8 +39,38 @@ function setProtected(object $object, string $property, mixed $value): void
     }
 
     $prop = $ref->getProperty($property);
-    $prop->setAccessible(true);
-    $prop->setValue($object, $value);
+    $scope = $prop->getDeclaringClass()->getName();
+
+    $setter = Closure::bind(
+        function (string $property, mixed $value): void {
+            $this->{$property} = $value;
+        },
+        $object,
+        $scope
+    );
+
+    $setter($property, $value);
+}
+
+function getProtected(object $object, string $property): mixed
+{
+    $ref = new ReflectionClass($object);
+    while (! $ref->hasProperty($property) && $ref = $ref->getParentClass()) {
+        // keep walking up
+    }
+
+    $prop = $ref->getProperty($property);
+    $scope = $prop->getDeclaringClass()->getName();
+
+    $getter = Closure::bind(
+        function (string $property): mixed {
+            return $this->{$property};
+        },
+        $object,
+        $scope
+    );
+
+    return $getter($property);
 }
 
 function callPrivate(object $object, string $method, array $args = []): mixed
@@ -51,9 +81,17 @@ function callPrivate(object $object, string $method, array $args = []): mixed
     }
 
     $m = $ref->getMethod($method);
-    $m->setAccessible(true);
+    $scope = $m->getDeclaringClass()->getName();
 
-    return $m->invokeArgs($object, $args);
+    $caller = Closure::bind(
+        function (string $method, array $args): mixed {
+            return $this->{$method}(...$args);
+        },
+        $object,
+        $scope
+    );
+
+    return $caller($method, $args);
 }
 
 function swapHttpFactory(HttpFactory $factory): void
