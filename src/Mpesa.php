@@ -5,6 +5,7 @@ namespace Itsmurumba\Mpesa;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
@@ -165,10 +166,12 @@ class Mpesa
         unset($resolved['profiles'], $resolved['default_profile'], $resolved['use_database']);
 
         $useDatabase = isset($root['use_database']) && $root['use_database'] === true;
+        $defaultProfile = isset($root['default_profile']) ? $root['default_profile'] : 'default';
+        $profileName = $profile ?: $defaultProfile;
 
         // Check database first if enabled
-        if ($useDatabase && $profile) {
-            $dbProfile = $this->resolveFromDatabase($profile);
+        if ($useDatabase && $profileName) {
+            $dbProfile = $this->resolveFromDatabase($profileName);
             if ($dbProfile) {
                 $resolved = array_merge($resolved, $dbProfile);
             }
@@ -182,8 +185,6 @@ class Mpesa
             }
 
             if (! empty($profiles)) {
-                $defaultProfile = isset($root['default_profile']) ? $root['default_profile'] : 'default';
-                $profileName = $profile ?: $defaultProfile;
                 if (isset($profiles[$profileName]) && is_array($profiles[$profileName])) {
                     $resolved = array_merge($resolved, $profiles[$profileName]);
                 }
@@ -232,7 +233,7 @@ class Mpesa
                 'confirmationURL' => $profile->confirmation_url,
                 'validationURL' => $profile->validation_url,
                 'initiatorUsername' => $profile->initiator_username,
-                'initiatorPassword' => $profile->initiator_password, // Note: Should be decrypted if encrypted
+                'initiatorPassword' => $this->maybeDecrypt($profile->initiator_password),
                 'environment' => $profile->environment,
                 'queueTimeOutURL' => $profile->queue_timeout_url,
                 'resultURL' => $profile->result_url,
@@ -240,6 +241,23 @@ class Mpesa
         } catch (\Exception $e) {
             // If DB lookup fails (e.g., table doesn't exist), fall back to config
             return null;
+        }
+    }
+
+    /**
+     * Try to decrypt a value if it looks like it was encrypted by Laravel.
+     * If decryption fails, return the original value.
+     */
+    protected function maybeDecrypt($value)
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        try {
+            return Crypt::decryptString($value);
+        } catch (\Throwable $e) {
+            return $value;
         }
     }
 
@@ -451,19 +469,24 @@ class Mpesa
      */
     private function getAccessToken()
     {
+        /** @var \Illuminate\Http\Client\Response $response */
         $response = Http::withHeaders([
             'Authorization' => 'Basic ' . base64_encode($this->consumerKey . ':' . $this->consumerSecret),
         ])->get(
             $this->baseUrl . '/oauth/v1/generate?grant_type=client_credentials'
         );
 
-        if ($response->status() == 200) {
-            $response = json_decode($response);
+        if ($response->successful()) {
+            $data = $response->object();
 
-            $this->expiresIn = date('Y-m-d H:i:s', (time() + $response->expires_in));
-            $this->accessToken = $response->access_token;
+            if (! $data || empty($data->access_token) || empty($data->expires_in)) {
+                return false;
+            }
 
-            return $response->access_token;
+            $this->expiresIn = date('Y-m-d H:i:s', (time() + (int) $data->expires_in));
+            $this->accessToken = (string) $data->access_token;
+
+            return $data->access_token;
         } else {
             return false;
         }
