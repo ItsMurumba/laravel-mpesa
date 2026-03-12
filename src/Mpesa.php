@@ -4,6 +4,8 @@ namespace Itsmurumba\Mpesa;
 
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
@@ -11,6 +13,16 @@ use Itsmurumba\Mpesa\Exceptions\IsNullException;
 
 class Mpesa
 {
+    /**
+     * Resolved configuration for this Mpesa instance (profile + overrides applied).
+     */
+    protected $config = [];
+
+    /**
+     * The selected profile name (if any).
+     */
+    protected $profile;
+
     /**
      * Consumer Key from the app on developer.safaricom.co.ke
      */
@@ -52,9 +64,9 @@ class Mpesa
     protected $accessToken;
 
     /**
-     * Expiry time for the access token
+     * Expiry time for the access token (datetime string or timestamp).
      *
-     * @var [type]
+     * @var string|int
      */
     protected $expiresIn;
 
@@ -62,11 +74,6 @@ class Mpesa
      * Lipa na Mpesa Shortcode
      */
     protected $lipaNaMpesaShortcode;
-
-    /**
-     * Lipa na Mpesa Callback URL
-     */
-    protected $çç;
 
     /**
      * Lipa na Mpesa Passkey
@@ -111,10 +118,22 @@ class Mpesa
      */
     protected $resultURL;
 
+    /**
+     * Lipa na Mpesa callback URL for STK Push notifications.
+     */
     protected $lipaNaMpesaCallbackURL;
 
-    public function __construct()
+    /**
+     * Create an Mpesa client for a specific profile.
+     *
+     * @param  string|null  $profile
+     * @param  array  $overrides
+     */
+    public function __construct($profile = null, array $overrides = [])
     {
+        $this->profile = $profile;
+        $this->config = $this->resolveConfig($profile, $overrides);
+
         $this->setConsumerKey();
         $this->setConsumerSecret();
         $this->setBaseUrl();
@@ -134,11 +153,124 @@ class Mpesa
     }
 
     /**
+     * Resolve config for a given profile (supports database + config-based profiles).
+     *
+     * Resolution order: root config as defaults, then database (if enabled and profile
+     * found), then config-based profiles, then overrides. Root keys 'profiles',
+     * 'default_profile' and 'use_database' are stripped from the resolved array.
+     *
+     * @param  string|null  $profile  Profile name, or null for default.
+     * @param  array  $overrides  Optional key-value overrides applied last.
+     * @return array
+     */
+    protected function resolveConfig($profile = null, array $overrides = [])
+    {
+        $root = (array) Config::get('mpesa', []);
+
+        $resolved = $root;
+        unset($resolved['profiles'], $resolved['default_profile'], $resolved['use_database']);
+
+        $useDatabase = isset($root['use_database']) && $root['use_database'] === true;
+        $defaultProfile = isset($root['default_profile']) ? $root['default_profile'] : 'default';
+        $profileName = $profile ?: $defaultProfile;
+
+        if ($useDatabase && $profileName) {
+            $dbProfile = $this->resolveFromDatabase($profileName);
+            if ($dbProfile) {
+                $resolved = array_merge($resolved, $dbProfile);
+            }
+        }
+
+        if (! $useDatabase || ! isset($dbProfile) || ! $dbProfile) {
+            $profiles = [];
+            if (isset($root['profiles']) && is_array($root['profiles'])) {
+                $profiles = $root['profiles'];
+            }
+
+            if (! empty($profiles)) {
+                if (isset($profiles[$profileName]) && is_array($profiles[$profileName])) {
+                    $resolved = array_merge($resolved, $profiles[$profileName]);
+                }
+            }
+        }
+
+        if (! empty($overrides)) {
+            $resolved = array_merge($resolved, $overrides);
+        }
+
+        return $resolved;
+    }
+
+    /**
+     * Resolve profile configuration from database.
+     *
+     * Returns a config-style array (camelCase keys) or null if the table is missing,
+     * the profile is not found, or the profile is inactive.
+     *
+     * @param  string  $profileName
+     * @return array|null
+     */
+    protected function resolveFromDatabase($profileName)
+    {
+        try {
+            if (! DB::getSchemaBuilder()->hasTable('mpesa_profiles')) {
+                return null;
+            }
+
+            $profile = DB::table('mpesa_profiles')
+                ->where('name', $profileName)
+                ->where('is_active', true)
+                ->first();
+
+            if (! $profile) {
+                return null;
+            }
+
+            return [
+                'consumerKey' => $profile->consumer_key,
+                'consumerSecret' => $profile->consumer_secret,
+                'baseUrl' => $profile->base_url,
+                'paybillNumber' => $profile->paybill_number,
+                'lipaNaMpesaShortcode' => $profile->lipa_na_mpesa_shortcode,
+                'lipaNaMpesaPasskey' => $profile->lipa_na_mpesa_passkey,
+                'lipaNaMpesaCallbackURL' => $profile->lipa_na_mpesa_callback_url,
+                'callBackURL' => $profile->callback_url,
+                'confirmationURL' => $profile->confirmation_url,
+                'validationURL' => $profile->validation_url,
+                'initiatorUsername' => $profile->initiator_username,
+                'initiatorPassword' => $this->maybeDecrypt($profile->initiator_password),
+                'environment' => $profile->environment,
+                'queueTimeOutURL' => $profile->queue_timeout_url,
+                'resultURL' => $profile->result_url,
+            ];
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Try to decrypt a value if it looks like it was encrypted by Laravel.
+     * If decryption fails, return the original value.
+     */
+    protected function maybeDecrypt($value)
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        try {
+            return Crypt::decryptString($value);
+        } catch (\Throwable $e) {
+            return $value;
+        }
+    }
+
+    /**
      * Get the consumer key from mpesa config file.
      */
     public function setConsumerKey()
     {
-        $this->consumerKey = Config::get('mpesa.consumerKey');
+        $this->consumerKey = $this->configValue('consumerKey');
     }
 
     /**
@@ -146,7 +278,7 @@ class Mpesa
      */
     public function setConsumerSecret()
     {
-        $this->consumerSecret = Config::get('mpesa.consumerSecret');
+        $this->consumerSecret = $this->configValue('consumerSecret');
     }
 
     /**
@@ -154,7 +286,7 @@ class Mpesa
      */
     public function setBaseUrl()
     {
-        $this->baseUrl = Config::get('mpesa.baseUrl');
+        $this->baseUrl = $this->configValue('baseUrl');
     }
 
     /**
@@ -162,7 +294,7 @@ class Mpesa
      */
     public function setPaybillNumber()
     {
-        $this->payBillNumber = Config::get('mpesa.paybillNumber');
+        $this->payBillNumber = $this->configValue('paybillNumber');
     }
 
     /**
@@ -170,7 +302,7 @@ class Mpesa
      */
     public function setCallBackURL()
     {
-        $this->callBackURL = Config::get('mpesa.callBackURL');
+        $this->callBackURL = $this->configValue('callBackURL');
     }
 
     /**
@@ -180,7 +312,7 @@ class Mpesa
      */
     public function setLipaNaMpesaShortcode()
     {
-        $this->lipaNaMpesaShortcode = Config::get('mpesa.lipaNaMpesaShortcode');
+        $this->lipaNaMpesaShortcode = $this->configValue('lipaNaMpesaShortcode');
     }
 
     /**
@@ -190,7 +322,7 @@ class Mpesa
      */
     public function setLipaNaMpesaCallbackURL()
     {
-        $this->lipaNaMpesaCallbackURL = Config::get('mpesa.lipaNaMpesaCallbackURL');
+        $this->lipaNaMpesaCallbackURL = $this->configValue('lipaNaMpesaCallbackURL');
     }
 
     /**
@@ -200,7 +332,7 @@ class Mpesa
      */
     public function setLipaNaMpesaPasskey()
     {
-        $this->lipaNaMpesaPasskey = Config::get('mpesa.lipaNaMpesaPasskey');
+        $this->lipaNaMpesaPasskey = $this->configValue('lipaNaMpesaPasskey');
     }
 
     /**
@@ -211,7 +343,7 @@ class Mpesa
      */
     public function setConfirmationURL()
     {
-        $this->confirmationURL = Config::get('mpesa.confirmationURL');
+        $this->confirmationURL = $this->configValue('confirmationURL');
     }
 
     /**
@@ -224,7 +356,7 @@ class Mpesa
      */
     public function setValidationURL()
     {
-        $this->validationURL = Config::get('mpesa.validationURL');
+        $this->validationURL = $this->configValue('validationURL');
     }
 
     /**
@@ -234,7 +366,7 @@ class Mpesa
      */
     private function setInitiatorUsername()
     {
-        $this->initiatorUsername = Config::get('mpesa.initiatorUsername');
+        $this->initiatorUsername = $this->configValue('initiatorUsername');
     }
 
     /**
@@ -244,7 +376,7 @@ class Mpesa
      */
     private function setInitiatorPassword()
     {
-        $this->initiatorPassword = Config::get('mpesa.initiatorPassword');
+        $this->initiatorPassword = $this->configValue('initiatorPassword');
     }
 
     /**
@@ -254,7 +386,7 @@ class Mpesa
      */
     public function setEnvironment()
     {
-        $this->environment = Config::get('mpesa.environment');
+        $this->environment = $this->configValue('environment');
     }
 
     /**
@@ -264,7 +396,7 @@ class Mpesa
      */
     public function setQueueTimeOutURL()
     {
-        $this->queueTimeOutURL = Config::get('mpesa.queueTimeOutURL');
+        $this->queueTimeOutURL = $this->configValue('queueTimeOutURL');
     }
 
     /**
@@ -274,7 +406,16 @@ class Mpesa
      */
     public function setResultURL()
     {
-        $this->resultURL = Config::get('mpesa.resultURL');
+        $this->resultURL = $this->configValue('resultURL');
+    }
+
+    protected function configValue($key, $default = null)
+    {
+        if (array_key_exists($key, $this->config)) {
+            return $this->config[$key];
+        }
+
+        return $default;
     }
 
     /**
@@ -332,19 +473,24 @@ class Mpesa
      */
     private function getAccessToken()
     {
+        /** @var \Illuminate\Http\Client\Response $response */
         $response = Http::withHeaders([
             'Authorization' => 'Basic ' . base64_encode($this->consumerKey . ':' . $this->consumerSecret),
         ])->get(
             $this->baseUrl . '/oauth/v1/generate?grant_type=client_credentials'
         );
 
-        if ($response->status() == 200) {
-            $response = json_decode($response);
+        if ($response->successful()) {
+            $data = $response->object();
 
-            $this->expiresIn = date('Y-m-d H:i:s', (time() + $response->expires_in));
-            $this->accessToken = $response->access_token;
+            if (! $data || empty($data->access_token) || empty($data->expires_in)) {
+                return false;
+            }
 
-            return $response->access_token;
+            $this->expiresIn = date('Y-m-d H:i:s', (time() + (int) $data->expires_in));
+            $this->accessToken = (string) $data->access_token;
+
+            return $data->access_token;
         } else {
             return false;
         }

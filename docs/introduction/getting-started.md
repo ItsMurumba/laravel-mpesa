@@ -46,7 +46,7 @@ This guide will walk you through the complete setup process, from installation t
 
 Before you begin, ensure you have:
 
-- **Laravel Application**: A Laravel application (version 8.0 or higher)
+- **Laravel Application**: A Laravel application (see [composer.json](https://github.com/ItsMurumba/laravel-mpesa/blob/main/composer.json) for supported versions; Laravel 8+ recommended)
 - **Composer**: PHP package manager installed
 - **M-Pesa Daraja Account**: Active Safaricom Daraja API account
 - **API Credentials**: Consumer key, consumer secret, and other required credentials
@@ -101,9 +101,9 @@ MPESA_ENVIRONMENT=sandbox
 MPESA_CONSUMER_KEY=your_consumer_key
 MPESA_CONSUMER_SECRET=your_consumer_secret
 
-# Business Details
-MPESA_LIPA_NA_MPESA_SHORTCODE=your_shortcode
-MPESA_LIPA_NA_MPESA_PASSKEY=your_passkey
+# Business Details (env keys match config/mpesa.php)
+LIPA_NA_MPESA_SHORTCODE=your_shortcode
+LIPA_NA_MPESA_PASSKEY=your_passkey
 
 # B2C/B2B Credentials
 MPESA_INITIATOR_USERNAME=your_initiator_username
@@ -112,7 +112,7 @@ MPESA_INITIATOR_PASSWORD=your_initiator_password
 # Callback URLs
 MPESA_RESULT_URL=https://your-domain.com/mpesa/result
 MPESA_QUEUE_TIMEOUT_URL=https://your-domain.com/mpesa/timeout
-MPESA_LIPA_NA_MPESA_CALLBACK_URL=https://your-domain.com/mpesa/stk/callback
+LIPA_NA_MPESA_CALLBACK_URL=https://your-domain.com/mpesa/stk/callback
 MPESA_CONFIRMATION_URL=https://your-domain.com/mpesa/c2b/confirmation
 MPESA_VALIDATION_URL=https://your-domain.com/mpesa/c2b/validation
 ```
@@ -121,50 +121,78 @@ MPESA_VALIDATION_URL=https://your-domain.com/mpesa/c2b/validation
 
 ### Configuration File
 
-The package configuration is located at `config/mpesa.php`:
+The package configuration is located at `config/mpesa.php`. It supports a single default profile (root keys) and [multiple profiles (multi-tenant)](/introduction/multi-tenant) via the `profiles` array or database.
+
+**Single profile (root keys):**
 
 ```php
 return [
-    'environment' => env('MPESA_ENVIRONMENT', 'sandbox'),
-    'baseUrl' => env('MPESA_BASE_URL', 'https://sandbox.safaricom.co.ke'),
+    'default_profile' => env('MPESA_DEFAULT_PROFILE', 'default'),
+    'use_database' => env('MPESA_USE_DATABASE', false),
+
     'consumerKey' => env('MPESA_CONSUMER_KEY', ''),
     'consumerSecret' => env('MPESA_CONSUMER_SECRET', ''),
-    'lipaNaMpesaShortcode' => env('MPESA_LIPA_NA_MPESA_SHORTCODE', ''),
-    'lipaNaMpesaPasskey' => env('MPESA_LIPA_NA_MPESA_PASSKEY', ''),
-    'initiatorUsername' => env('MPESA_INITIATOR_USERNAME', ''),
-    'initiatorPassword' => env('MPESA_INITIATOR_PASSWORD', ''),
-    'resultURL' => env('MPESA_RESULT_URL', ''),
-    'queueTimeOutURL' => env('MPESA_QUEUE_TIMEOUT_URL', ''),
-    'lipaNaMpesaCallbackURL' => env('MPESA_LIPA_NA_MPESA_CALLBACK_URL', ''),
-    'confirmationURL' => env('MPESA_CONFIRMATION_URL', ''),
-    'validationURL' => env('MPESA_VALIDATION_URL', ''),
+    'baseUrl' => env('MPESA_BASE_URL', 'https://sandbox.safaricom.co.ke'),
+    'environment' => env('MPESA_ENVIRONMENT', 'sandbox'),
+    'paybillNumber' => env('MPESA_PAYBILL_NUMBER'),
+    'lipaNaMpesaShortcode' => env('LIPA_NA_MPESA_SHORTCODE'),
+    'lipaNaMpesaPasskey' => env('LIPA_NA_MPESA_PASSKEY'),
+    'lipaNaMpesaCallbackURL' => env('LIPA_NA_MPESA_CALLBACK_URL'),
+    'callBackURL' => env('MPESA_CALLBACK_URL'),
+    'confirmationURL' => env('MPESA_CONFIRMATION_URL'),
+    'validationURL' => env('MPESA_VALIDATION_URL'),
+    'initiatorUsername' => env('MPESA_INITIATOR_USERNAME'),
+    'initiatorPassword' => env('MPESA_INITIATOR_PASSWORD'),
+    'queueTimeOutURL' => env('MPESA_QUEUE_TIMEOUT_URL'),
+    'resultURL' => env('MPESA_RESULT_URL'),
+
+    'profiles' => [
+        'default' => [
+            'consumerKey' => env('MPESA_CONSUMER_KEY'),
+            'consumerSecret' => env('MPESA_CONSUMER_SECRET'),
+            'lipaNaMpesaShortcode' => env('LIPA_NA_MPESA_SHORTCODE'),
+            'lipaNaMpesaPasskey' => env('LIPA_NA_MPESA_PASSKEY'),
+            // ... other keys
+        ],
+    ],
 ];
 ```
+
+For multiple paybills/tills (SaaS), see [Multi-tenant / Profiles](/introduction/multi-tenant).
 
 ## Testing Your Installation
 
 ### Verify Configuration
 
-Create a simple test to verify your configuration is working:
+API methods return a **JSON string**; decode it before reading keys. Example route to verify config and auth:
 
 ```php
 // routes/web.php
 Route::get('/test-mpesa', function () {
     try {
         $mpesa = new \Itsmurumba\Mpesa\Mpesa();
-        
-        // Test authentication
-        $response = $mpesa->expressPaymentQuery('test-request-id');
-        
+
+        // Test auth by initiating an STK push (sandbox will respond even with test data)
+        $response = $mpesa->expressPayment(1, '254708374149', 'TEST', 'Test');
+        $data = json_decode($response, true);
+
+        if (is_array($data) && isset($data['ResponseCode'])) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'M-Pesa configuration is working',
+                'response' => $data,
+            ]);
+        }
+
         return response()->json([
-            'status' => 'success',
-            'message' => 'M-Pesa configuration is working',
-            'response' => $response
-        ]);
+            'status' => 'error',
+            'message' => 'Unexpected response',
+            'raw' => $response,
+        ], 500);
     } catch (\Exception $e) {
         return response()->json([
             'status' => 'error',
-            'message' => 'M-Pesa configuration error: ' . $e->getMessage()
+            'message' => 'M-Pesa configuration error: ' . $e->getMessage(),
         ], 500);
     }
 });
@@ -181,6 +209,8 @@ php artisan tinker
 
 ## Quick Start Examples
 
+All API methods return a **JSON string**. Use `json_decode($response, true)` to get an array and check `ResponseCode`, `CheckoutRequestID`, etc.
+
 ### 1. Express Payment (STK Push)
 
 ```php
@@ -194,6 +224,7 @@ $response = $mpesa->expressPayment(
     accountReference: 'INV-001',
     transactionDescription: 'Payment for services'
 );
+$data = json_decode($response, true);
 ```
 
 ### 2. C2B Payment
@@ -281,9 +312,10 @@ try {
     );
     
     // Handle successful response
-    if (isset($response['ResponseCode']) && $response['ResponseCode'] === '0') {
+    $data = json_decode($response, true);
+    if (is_array($data) && isset($data['ResponseCode']) && $data['ResponseCode'] === '0') {
         // Payment initiated successfully
-        Log::info('Payment initiated', $response);
+        Log::info('Payment initiated', $data);
     }
     
 } catch (IsNullException $e) {
@@ -366,16 +398,18 @@ Route::post('/mpesa/c2b/confirmation', function (Request $request) {
 public function test_express_payment()
 {
     $mpesa = new Mpesa();
-    
+
     $response = $mpesa->expressPayment(
         amount: 1000,
         phoneNumber: '254700000000',
         accountReference: 'TEST-001',
         transactionDescription: 'Test payment'
     );
-    
-    $this->assertArrayHasKey('CheckoutRequestID', $response);
-    $this->assertArrayHasKey('ResponseCode', $response);
+    $data = json_decode($response, true);
+
+    $this->assertIsArray($data);
+    $this->assertArrayHasKey('CheckoutRequestID', $data);
+    $this->assertArrayHasKey('ResponseCode', $data);
 }
 ```
 
@@ -386,21 +420,20 @@ public function test_express_payment()
 public function test_payment_workflow()
 {
     $mpesa = new Mpesa();
-    
-    // Test express payment
+
     $response = $mpesa->expressPayment(
         amount: 1000,
         phoneNumber: '254700000000',
         accountReference: 'TEST-001',
         transactionDescription: 'Test payment'
     );
-    
-    $this->assertEquals('0', $response['ResponseCode']);
-    
-    // Test transaction status
-    if (isset($response['CheckoutRequestID'])) {
-        $statusResponse = $mpesa->expressPaymentQuery($response['CheckoutRequestID']);
-        $this->assertArrayHasKey('ResponseCode', $statusResponse);
+    $data = json_decode($response, true);
+    $this->assertIsArray($data);
+
+    if (isset($data['ResponseCode']) && $data['ResponseCode'] === '0' && !empty($data['CheckoutRequestID'])) {
+        $statusResponse = $mpesa->expressPaymentQuery($data['CheckoutRequestID']);
+        $statusData = json_decode($statusResponse, true);
+        $this->assertArrayHasKey('ResponseCode', $statusData);
     }
 }
 ```
@@ -553,17 +586,16 @@ When deploying to production:
 
 ## Next Steps
 
-Now that you have the basics set up, explore the detailed documentation for each API.
+- [Multi-tenant / multiple paybills](/introduction/multi-tenant) — Use `Mpesa::for('profile')->expressPayment(...)` for multiple tenants.
+- Explore the sidebar for each API: M-Pesa Express, C2B, B2C, B2B, Dynamic QR, Ratiba, and more.
 
 ## Support
 
-For additional support and resources:
-
-- **Package Repository**: [GitHub Repository](https://github.com/itsmurumba/laravel-mpesa)
-- **Documentation**: [Complete Documentation](../index.md)
-- **Issues**: [GitHub Issues](https://github.com/itsmurumba/laravel-mpesa/issues)
-- **Contributing**: [Contribution Guide](../../Contribution.md)
+- **Package Repository**: [GitHub Repository](https://github.com/ItsMurumba/laravel-mpesa)
+- **Documentation**: [Documentation](/)
+- **Issues**: [GitHub Issues](https://github.com/ItsMurumba/laravel-mpesa/issues)
+- **Contributing**: [Contribution Guide](https://github.com/ItsMurumba/laravel-mpesa/blob/main/Contribution.md)
 
 ## License
 
-This package is open-sourced software licensed under the [MIT license](../../LICENSE).
+This package is open-sourced software licensed under the [MIT license](https://github.com/ItsMurumba/laravel-mpesa/blob/main/LICENSE).

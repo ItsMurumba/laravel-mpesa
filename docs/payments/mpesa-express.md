@@ -57,8 +57,8 @@ return [
 Add these to your `.env` file:
 
 ```env
-MPESA_LIPA_NA_MPESA_SHORTCODE=174379
-MPESA_LIPA_NA_MPESA_PASSKEY=bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919
+MPESA_LIPA_NA_MPESA_SHORTCODE=xxxxx
+MPESA_LIPA_NA_MPESA_PASSKEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 MPESA_LIPA_NA_MPESA_CALLBACK_URL=https://your-domain.com/mpesa/callback
 ```
 
@@ -154,6 +154,8 @@ $arrayData = [
 
 ## Response Format
 
+All API methods in this package return the **raw JSON string** from the M-Pesa API. Use `json_decode($response, true)` to get an array and read `ResponseCode`, `CheckoutRequestID`, etc.
+
 ### Initiate Payment Response
 
 **Success Response:**
@@ -242,8 +244,8 @@ For testing purposes, use the sandbox environment:
 
 ```php
 // Use sandbox credentials
-MPESA_LIPA_NA_MPESA_SHORTCODE=174379
-MPESA_LIPA_NA_MPESA_PASSKEY=bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919
+MPESA_LIPA_NA_MPESA_SHORTCODE=xxxxxx
+MPESA_LIPA_NA_MPESA_PASSKEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 MPESA_BASE_URL=https://sandbox.safaricom.co.ke
 ```
 
@@ -435,7 +437,6 @@ dd([
 
 - [Authorization](../security/authorization.md)
 - [Getting Started](../introduction/getting-started.md)
-- [Configuration](../introduction/configuration.md)
 - [C2B Payments](./c2b.md)
-- [B2C Payments](./b2c.md)
+- [B2C Payments](../disbursements/b2c.md)
 - [Transaction Status](../experience/transaction-status.md)

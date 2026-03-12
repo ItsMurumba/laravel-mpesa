@@ -13,14 +13,12 @@ describe('Http client + auth', function () {
     })->throws(IsNullException::class, 'Empty method not allowed');
 
     it('returns false when access token endpoint returns non-200', function () {
-        // Swap the underlying HTTP factory so TestCase::setUp() fake can't override this.
         $factory = new HttpFactory();
         $factory->fake([
             '*' => Http::response(['error' => 'nope'], 500),
         ]);
         swapHttpFactory($factory);
 
-        // Create instance without running constructor (constructor always calls getAccessToken).
         $mpesa = (new ReflectionClass(Mpesa::class))->newInstanceWithoutConstructor();
         setProtected($mpesa, 'consumerKey', 'key');
         setProtected($mpesa, 'consumerSecret', 'secret');

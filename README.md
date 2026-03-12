@@ -1,132 +1,81 @@
-# Introduction
-This is a Laravel package for Safaricom Mpesa Daraja API. It includes all public available endpoints:
+# Laravel M-Pesa
 
-* Consumer to Business (C2B) payments
-* Business to Consumer (B2C) payments
-* Mpesa Express Payment (Lipa Na Mpesa Online)
-* Transaction Status
-* Account Balance
-* Reversal
-* Business to Business (B2B) payments
+Laravel package for the Safaricom M-Pesa Daraja API. Supports C2B, B2C, B2B, M-Pesa Express (STK Push), transaction status, account balance, reversals, dynamic QR, tax remittance, M-Pesa Ratiba, and more.
 
-# Installation
+**[Full documentation →](https://mpesa.itsmurumba.dev)**
 
-Run the following command to install Laravel Mpesa package in your Laravel project:
+## Requirements
 
-````
+- PHP 7.1+
+- Laravel 5.0+ (Laravel 8+ recommended)
+- [Composer](https://getcomposer.org/)
+
+## Installation
+
+```bash
 composer require itsmurumba/laravel-mpesa
-````
+```
 
-If you are using **Laravel 5.5** and above, skip to the [**Configurations**](https://github.com/ItsMurumba/laravel-mpesa#configurations) step.
+Publish the config file:
 
-After running the composer require above, you should add a service provider and alias of the package in config/app.php file.(For Laravel 5.4 and below)
+```bash
+php artisan vendor:publish --provider="Itsmurumba\Mpesa\MpesaServiceProvider" --tag=mpesa-config
+```
 
-````
+For Laravel 5.4 and below, register the service provider in `config/app.php`:
+
+```php
 Itsmurumba\Mpesa\MpesaServiceProvider::class
-````
+```
 
-# Configurations
+## Configuration
 
-After installing the package, run the following command to install `mpesa.php` configuartion file in the `config` folder:
+Add your M-Pesa credentials to `.env`. See the [configuration guide](https://mpesa.itsmurumba.dev/introduction/getting-started#basic-configuration) for all options.
 
-````
-php artisan mpesa:install
-````
-
-or 
-````
-php artisan vendor:publish
-````
-
-Add and define the following variables in your `.env` file
-
-````
+```env
 MPESA_CONSUMER_KEY=
 MPESA_CONSUMER_SECRET=
-MPESA_CALLBACK_URL=
-MPESA_BASE_URL=https://sandbox.safaricom.co.ke
-MPESA_PAYBILL_NUMBER=600978
-LIPA_NA_MPESA_SHORTCODE=174379
-LIPA_NA_MPESA_CALLBACK_URL=
+LIPA_NA_MPESA_SHORTCODE=
 LIPA_NA_MPESA_PASSKEY=
-MPESA_CONFIRMATION_URL=
-MPESA_VALIDATION_URL=
-MPESA_INITIATOR_USERNAME=
-MPESA_INITIATOR_PASSWORD=
+LIPA_NA_MPESA_CALLBACK_URL=
+MPESA_BASE_URL=https://sandbox.safaricom.co.ke
 MPESA_ENVIRONMENT=sandbox
-MPESA_QUEUE_TIMEOUT_URL=
-MPESA_RESULT_URL=
-````
+# ... (see docs for full list)
+```
 
-# Usage
-Add the following constructor inside your controller:
-`````
-protected $mpesa;
+## Usage
 
-public function __construct(){
-    $this->mpesa = new Mpesa();
-}
-`````
+**Single paybill/till:**
 
-**1. Mpesa Express Payment (Lipa Na Mpesa Online)**
-````
-$this->mpesa->expressPayment($amount, $phoneNumber, $accountReference = 'CompanyXLTD', $transactionDescription = 'Payment of X');
-````
-* $phoneNumber = 254XXXXXXXXX
-* $accountReference = Account Reference (maximum 12 characters)
-* transactionDescription = Transaction Description (1-13 characters)
+```php
+use Itsmurumba\Mpesa\Mpesa;
 
-**2. Mpesa Express Payment Query (Lipa Na Mpesa Online)**
-````
-$this->mpesa->expressPaymentQuery($checkoutRequestId);
-````
-**3. C2B Register URLs**
-````
-$this->mpesa->c2bRegisterURLs();
-````
+$mpesa = new Mpesa();
+$mpesa->expressPayment($amount, $phoneNumber);
+```
 
-**4. Consumer to Business (C2B) payments**
-````
-$this->mpesa->c2bPaymentc2bPayment($commandId, $amount, $phoneNumber, $billRefNumber); 
-````
-* $commandId = can only be set to **CustomerPayBillOnline** or **CustomerBuyGoodsOnline**
-* $billRefNumber = used on CustomerPayBillOnline option only e.g an Account Number. Set the value to `''` when commandId is **CustomerBuyGoodsOnline**
+**Multiple paybills (multi-tenant / SaaS):**
 
-**5. Business to Consumer (B2C) payments**
-````
-$this->mpesa->b2cPayment($commandId, $amount, $phoneNumber, $remarks, $occassion = '');
-````
-**6. Transaction Status**
-````
-$this->mpesa->transactionStatus($transactionId, $identifierType, $remarks, $occassion = '');
-````
-**7. Account Balance**
-````
-$this->mpesa->accountBalance($identifierType, $remarks);
-````
-**8. Reversal**
-````
-$this->mpesa->reversals($transactionId, $amount, $receiverParty, $receiverIdentifierType, $remarks, $occasion = '');
-````
-**9. Business to Business Payment(B2B)**
-````
-$this->mpesa->b2bPayment($commandId, $amount, $receiverShortcode, $accountReference, $remarks);
-````
+```php
+use Itsmurumba\Mpesa\Facades\Mpesa;
 
+Mpesa::for('tenant-id')->expressPayment($amount, $phoneNumber);
+```
 
-# Contribution
-This is a community package and thus welcome anyone intrested to contribute in improving the package. Kindly go through the [Contribution.md](Contribution.md) before starting to contribute. Keep those PRs and Issues coming.
+Profiles can be defined in config or stored in the database. [Multi-tenant setup →](https://mpesa.itsmurumba.dev/introduction/multi-tenant)
 
-# Buy Me Coffee
-Give this repo a star and i will have my super powers recharged. You can also follow me on twitter [@ItsMurumba](https://twitter.com/ItsMurumba)
+## Supported APIs
 
-# License
-This package is licensed under the MIT License. Please review the [License](LICENSE.md) file for details
+M-Pesa Express, C2B, B2C, B2B, Paybill, Buy Goods, B2B Express Checkout, Dynamic QR, Tax Remittance, M-Pesa Ratiba, Account Balance, Transaction Status, Reversals, Bill Manager. Method signatures and examples are in the [documentation](https://mpesa.itsmurumba.dev).
 
+## Contributing
 
+Contributions are welcome. Please read [Contribution.md](Contribution.md) before submitting PRs or issues.
 
+## License
 
+MIT. See [LICENSE](LICENSE) for details.
 
+---
 
-
-
+Give the repo a star to support the project. Follow [@ItsMurumba](https://twitter.com/ItsMurumba) on Twitter.
