@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\DB;
 
 describe('Database Profiles', function () {
     beforeEach(function () {
-        // Ensure database is set up
         if (! DB::getSchemaBuilder()->hasTable('mpesa_profiles')) {
             DB::getSchemaBuilder()->create('mpesa_profiles', function ($table) {
                 $table->id();
@@ -32,7 +31,6 @@ describe('Database Profiles', function () {
             });
         }
 
-        // Enable database lookups
         config()->set('mpesa.use_database', true);
     });
 
@@ -83,7 +81,6 @@ describe('Database Profiles', function () {
             ],
         ]);
 
-        // Try to resolve non-existent DB profile
         $mpesa = new Mpesa('tenant_config');
 
         $calls = [];
@@ -120,7 +117,6 @@ describe('Database Profiles', function () {
             ],
         ]);
 
-        // Should fall back to config since DB profile is inactive
         $mpesa = new Mpesa('inactive_tenant');
 
         $calls = [];
@@ -165,7 +161,6 @@ describe('Database Profiles', function () {
     });
 
     it('handles missing database table gracefully', function () {
-        // Drop table if exists
         if (DB::getSchemaBuilder()->hasTable('mpesa_profiles')) {
             DB::getSchemaBuilder()->drop('mpesa_profiles');
         }
@@ -181,7 +176,6 @@ describe('Database Profiles', function () {
             ],
         ]);
 
-        // Should fall back to config when table doesn't exist
         $mpesa = new Mpesa('fallback');
 
         $calls = [];
@@ -219,7 +213,6 @@ describe('Database Profiles', function () {
             ],
         ]);
 
-        // Should use config when database is disabled
         $mpesa = new Mpesa('disabled_db');
 
         $calls = [];

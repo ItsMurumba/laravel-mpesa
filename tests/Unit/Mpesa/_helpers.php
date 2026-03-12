@@ -31,11 +31,13 @@ function makeFakeGuzzleClient(array &$calls): object
     };
 }
 
+/**
+ * Set a protected or private property on an object (walks up class hierarchy if needed).
+ */
 function setProtected(object $object, string $property, mixed $value): void
 {
     $ref = new ReflectionClass($object);
     while (! $ref->hasProperty($property) && $ref = $ref->getParentClass()) {
-        // keep walking up
     }
 
     $prop = $ref->getProperty($property);
@@ -52,11 +54,13 @@ function setProtected(object $object, string $property, mixed $value): void
     $setter($property, $value);
 }
 
+/**
+ * Get a protected or private property from an object (walks up class hierarchy if needed).
+ */
 function getProtected(object $object, string $property): mixed
 {
     $ref = new ReflectionClass($object);
     while (! $ref->hasProperty($property) && $ref = $ref->getParentClass()) {
-        // keep walking up
     }
 
     $prop = $ref->getProperty($property);
@@ -73,11 +77,16 @@ function getProtected(object $object, string $property): mixed
     return $getter($property);
 }
 
+/**
+ * Call a protected or private method on an object (walks up class hierarchy if needed).
+ *
+ * @param  array  $args
+ * @return mixed
+ */
 function callPrivate(object $object, string $method, array $args = []): mixed
 {
     $ref = new ReflectionClass($object);
     while (! $ref->hasMethod($method) && $ref = $ref->getParentClass()) {
-        // keep walking up
     }
 
     $m = $ref->getMethod($method);
@@ -94,9 +103,11 @@ function callPrivate(object $object, string $method, array $args = []): mixed
     return $caller($method, $args);
 }
 
+/**
+ * Swap the Http facade's underlying Factory (e.g. for test fakes).
+ */
 function swapHttpFactory(HttpFactory $factory): void
 {
-    // The Http facade can swap the underlying Factory instance.
     Illuminate\Support\Facades\Http::swap($factory);
 }
 

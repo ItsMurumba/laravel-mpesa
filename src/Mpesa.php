@@ -64,9 +64,9 @@ class Mpesa
     protected $accessToken;
 
     /**
-     * Expiry time for the access token
+     * Expiry time for the access token (datetime string or timestamp).
      *
-     * @var [type]
+     * @var string|int
      */
     protected $expiresIn;
 
@@ -74,11 +74,6 @@ class Mpesa
      * Lipa na Mpesa Shortcode
      */
     protected $lipaNaMpesaShortcode;
-
-    /**
-     * Lipa na Mpesa Callback URL
-     */
-    // (property removed - use $lipaNaMpesaCallbackURL)
 
     /**
      * Lipa na Mpesa Passkey
@@ -123,6 +118,9 @@ class Mpesa
      */
     protected $resultURL;
 
+    /**
+     * Lipa na Mpesa callback URL for STK Push notifications.
+     */
     protected $lipaNaMpesaCallbackURL;
 
     /**
@@ -156,12 +154,19 @@ class Mpesa
 
     /**
      * Resolve config for a given profile (supports database + config-based profiles).
+     *
+     * Resolution order: root config as defaults, then database (if enabled and profile
+     * found), then config-based profiles, then overrides. Root keys 'profiles',
+     * 'default_profile' and 'use_database' are stripped from the resolved array.
+     *
+     * @param  string|null  $profile  Profile name, or null for default.
+     * @param  array  $overrides  Optional key-value overrides applied last.
+     * @return array
      */
     protected function resolveConfig($profile = null, array $overrides = [])
     {
         $root = (array) Config::get('mpesa', []);
 
-        // Root keys are defaults. Profile keys override root keys.
         $resolved = $root;
         unset($resolved['profiles'], $resolved['default_profile'], $resolved['use_database']);
 
@@ -169,7 +174,6 @@ class Mpesa
         $defaultProfile = isset($root['default_profile']) ? $root['default_profile'] : 'default';
         $profileName = $profile ?: $defaultProfile;
 
-        // Check database first if enabled
         if ($useDatabase && $profileName) {
             $dbProfile = $this->resolveFromDatabase($profileName);
             if ($dbProfile) {
@@ -177,7 +181,6 @@ class Mpesa
             }
         }
 
-        // Fall back to config-based profiles if DB didn't resolve or DB is disabled
         if (! $useDatabase || ! isset($dbProfile) || ! $dbProfile) {
             $profiles = [];
             if (isset($root['profiles']) && is_array($root['profiles'])) {
@@ -201,6 +204,9 @@ class Mpesa
     /**
      * Resolve profile configuration from database.
      *
+     * Returns a config-style array (camelCase keys) or null if the table is missing,
+     * the profile is not found, or the profile is inactive.
+     *
      * @param  string  $profileName
      * @return array|null
      */
@@ -220,7 +226,6 @@ class Mpesa
                 return null;
             }
 
-            // Map database columns to config keys
             return [
                 'consumerKey' => $profile->consumer_key,
                 'consumerSecret' => $profile->consumer_secret,
@@ -239,7 +244,6 @@ class Mpesa
                 'resultURL' => $profile->result_url,
             ];
         } catch (\Exception $e) {
-            // If DB lookup fails (e.g., table doesn't exist), fall back to config
             return null;
         }
     }

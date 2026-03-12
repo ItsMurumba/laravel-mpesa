@@ -8,11 +8,13 @@ use Itsmurumba\Mpesa\MpesaServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    /**
+     * Fakes HTTP so Mpesa can be constructed without making real OAuth calls.
+     */
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Ensure Mpesa can be constructed without making real HTTP calls.
         Http::fake([
             '*' => Http::response(['access_token' => 'test-token', 'expires_in' => 3599], 200),
         ]);
@@ -25,6 +27,9 @@ abstract class TestCase extends Orchestra
         ];
     }
 
+    /**
+     * Sets base Mpesa config and supports both legacy single-config and profiles config.
+     */
     protected function defineEnvironment($app)
     {
         $base = [
@@ -45,7 +50,6 @@ abstract class TestCase extends Orchestra
             'resultURL' => 'https://example.test/result',
         ];
 
-        // Support both legacy single-config and new profiles config.
         $app['config']->set('mpesa', array_merge($base, [
             'default_profile' => 'default',
             'profiles' => [
