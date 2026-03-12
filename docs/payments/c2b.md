@@ -510,7 +510,6 @@ dd($response);
 
 - [Authorization](../security/authorization.md)
 - [Getting Started](../introduction/getting-started.md)
-- [Configuration](../introduction/configuration.md)
 - [M-Pesa Express](./mpesa-express.md)
-- [B2C Payments](./b2c.md)
+- [B2C Payments](../disbursements/b2c.md)
 - [Transaction Status](../experience/transaction-status.md)

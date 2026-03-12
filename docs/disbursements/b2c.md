@@ -562,7 +562,6 @@ dd(['sandbox' => $sandboxCert, 'production' => $productionCert]);
 
 - [Authorization](../security/authorization.md)
 - [Getting Started](../introduction/getting-started.md)
-- [Configuration](../introduction/configuration.md)
 - [M-Pesa Express](../payments/mpesa-express.md)
 - [C2B Payments](../payments/c2b.md)
 - [Transaction Status](../experience/transaction-status.md)

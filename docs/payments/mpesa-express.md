@@ -154,6 +154,8 @@ $arrayData = [
 
 ## Response Format
 
+All API methods in this package return the **raw JSON string** from the M-Pesa API. Use `json_decode($response, true)` to get an array and read `ResponseCode`, `CheckoutRequestID`, etc.
+
 ### Initiate Payment Response
 
 **Success Response:**
@@ -435,7 +437,6 @@ dd([
 
 - [Authorization](../security/authorization.md)
 - [Getting Started](../introduction/getting-started.md)
-- [Configuration](../introduction/configuration.md)
 - [C2B Payments](./c2b.md)
-- [B2C Payments](./b2c.md)
+- [B2C Payments](../disbursements/b2c.md)
 - [Transaction Status](../experience/transaction-status.md)

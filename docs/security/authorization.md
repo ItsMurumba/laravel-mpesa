@@ -229,7 +229,5 @@ For testing purposes, you can use the sandbox environment:
 ## Related Documentation
 
 - [Getting Started](../introduction/getting-started.md)
-- [Configuration](../introduction/configuration.md)
-- [Error Handling](../introduction/error-handling.md)
 - [M-Pesa Express](../payments/mpesa-express.md)
 - [C2B Payments](../payments/c2b.md)
