@@ -14,7 +14,6 @@ Welcome and thank you for considering to improve this package. Please remember t
 
 * All test musts be running successfully before submitting a PR.
 
+* PRs into `develop` and `main` may only be merged when the **Tests** workflow passes 
+
 Let's Gooo!
-
-
-
