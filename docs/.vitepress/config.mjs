@@ -1,6 +1,7 @@
 import {defineConfig} from 'vitepress'
 
 export default defineConfig({
+    base: '/laravel-mpesa/',
     title: "Laravel Mpesa",
     description: "A Laravel package for Mpesa integration",
     lastUpdated: true,

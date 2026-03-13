@@ -68,6 +68,14 @@ Profiles can be defined in config or stored in the database. [Multi-tenant setup
 
 M-Pesa Express, C2B, B2C, B2B, Paybill, Buy Goods, B2B Express Checkout, Dynamic QR, Tax Remittance, M-Pesa Ratiba, Account Balance, Transaction Status, Reversals, Bill Manager. Method signatures and examples are in the [documentation](https://mpesa.itsmurumba.dev).
 
+## Docs (GitHub Pages)
+
+The documentation in `docs/` is built with [VitePress](https://vitepress.dev) and deployed automatically via GitHub Actions.
+
+**One-time setup:** In the repo go to **Settings → Pages**. Under "Build and deployment", set **Source** to **GitHub Actions**.
+
+After that, every push to `main` that changes files under `docs/` will build and deploy the site. The workflow file is [`.github/workflows/deploy-docs.yml`](.github/workflows/deploy-docs.yml). If you use a custom domain for Pages, set `base: '/'` in `docs/.vitepress/config.mjs` (it is currently `'/laravel-mpesa/'` for the default `https://<owner>.github.io/laravel-mpesa/` URL).
+
 ## Contributing
 
 Contributions are welcome. Please read [Contribution.md](Contribution.md) before submitting PRs or issues.
