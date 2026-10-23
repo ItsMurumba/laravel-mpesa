@@ -27,20 +27,17 @@ jobs:
       - name: Get next pre-release version
         id: version
         run: |
-          # Latest stable tag (vX.Y.Z); pre-releases such as v1.0.9-dev.1 or v2.0.0-rc.1 are skipped.
-          LATEST=$(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
+          # Latest stable tag (vX.Y.Z); pre-releases such as v1.0.9-beta.1 or v2.0.0-rc.1 are skipped.
+          LATEST=$(git tag -l "v*" | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+$" | sort -V | tail -n1)
           LATEST=${LATEST:-v1.0.8}
-          LATEST=${LATEST#v}
-          PARTS=(${LATEST//./ })
-          MAJOR=${PARTS[0]:-1}
-          MINOR=${PARTS[1]:-0}
-          PATCH=${PARTS[2]:-8}
-          NEXT_PATCH=$((PATCH + 1))
-          BASE="v${MAJOR}.${MINOR}.${NEXT_PATCH}"
-          # One past the highest existing pre-release number for this base, so deleted tags leave no clash
-          LAST=$(git tag -l "${BASE}-dev.*" | sed 's/.*-dev\.//' | sort -n | tail -n1)
-          N=$((${LAST:-0} + 1))
-          VERSION="${BASE}-dev.${N}"
+          IFS=. read -r MAJOR MINOR PATCH <<< "${LATEST#v}"
+          BASE="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+          # A release candidate above the next patch (e.g. v2.0.0-rc.1) sets the version develop is heading for.
+          RC=$(git tag -l "v*-rc.*" | sed "s/-rc\..*//" | sort -V | tail -n1)
+          if [ -n "$RC" ] && [ "$(printf "%s\n" "$BASE" "$RC" | sort -V | tail -n1)" = "$RC" ]; then BASE=$RC; fi
+          # Composer accepts -beta.N (not -dev.N), so these can be installed. One past the highest existing number.
+          LAST=$(git tag -l "${BASE}-beta.*" | sed "s/.*-beta\.//" | sort -n | tail -n1)
+          VERSION="${BASE}-beta.$((${LAST:-0} + 1))"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Pre-release version: ${VERSION}"
 
