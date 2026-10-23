@@ -56,15 +56,11 @@ describe('Database Profiles', function () {
         ]);
 
         $mpesa = new Mpesa('tenant_db');
-
-        $calls = [];
-        $fakeClient = makeFakeGuzzleClient($calls);
-        setProtected($mpesa, 'client', $fakeClient);
         setProtected($mpesa, 'baseUrl', 'https://example.test');
 
         $mpesa->expressPayment(100, '254700000000');
 
-        $payload = json_decode($fakeClient->calls[0]['options']['body'], true);
+        $payload = darajaRequests()[0]->data();
         expect($payload['BusinessShortCode'])->toBe('999999');
         expect($payload['CallBackURL'])->toBe('https://example.test/db-callback');
     });
@@ -82,15 +78,11 @@ describe('Database Profiles', function () {
         ]);
 
         $mpesa = new Mpesa('tenant_config');
-
-        $calls = [];
-        $fakeClient = makeFakeGuzzleClient($calls);
-        setProtected($mpesa, 'client', $fakeClient);
         setProtected($mpesa, 'baseUrl', 'https://example.test');
 
         $mpesa->expressPayment(100, '254700000000');
 
-        $payload = json_decode($fakeClient->calls[0]['options']['body'], true);
+        $payload = darajaRequests()[0]->data();
         expect($payload['BusinessShortCode'])->toBe('888888');
     });
 
@@ -118,15 +110,11 @@ describe('Database Profiles', function () {
         ]);
 
         $mpesa = new Mpesa('inactive_tenant');
-
-        $calls = [];
-        $fakeClient = makeFakeGuzzleClient($calls);
-        setProtected($mpesa, 'client', $fakeClient);
         setProtected($mpesa, 'baseUrl', 'https://example.test');
 
         $mpesa->expressPayment(100, '254700000000');
 
-        $payload = json_decode($fakeClient->calls[0]['options']['body'], true);
+        $payload = darajaRequests()[0]->data();
         expect($payload['BusinessShortCode'])->toBe('666666');
     });
 
@@ -147,15 +135,11 @@ describe('Database Profiles', function () {
 
         $manager = new MpesaManager();
         $mpesa = $manager->for('manager_test');
-
-        $calls = [];
-        $fakeClient = makeFakeGuzzleClient($calls);
-        setProtected($mpesa, 'client', $fakeClient);
         setProtected($mpesa, 'baseUrl', 'https://example.test');
 
         $mpesa->expressPayment(100, '254700000000');
 
-        $payload = json_decode($fakeClient->calls[0]['options']['body'], true);
+        $payload = darajaRequests()[0]->data();
         expect($payload['BusinessShortCode'])->toBe('555555');
         expect($payload['CallBackURL'])->toBe('https://example.test/manager-callback');
     });
@@ -177,15 +161,11 @@ describe('Database Profiles', function () {
         ]);
 
         $mpesa = new Mpesa('fallback');
-
-        $calls = [];
-        $fakeClient = makeFakeGuzzleClient($calls);
-        setProtected($mpesa, 'client', $fakeClient);
         setProtected($mpesa, 'baseUrl', 'https://example.test');
 
         $mpesa->expressPayment(100, '254700000000');
 
-        $payload = json_decode($fakeClient->calls[0]['options']['body'], true);
+        $payload = darajaRequests()[0]->data();
         expect($payload['BusinessShortCode'])->toBe('444444');
     });
 
@@ -214,15 +194,11 @@ describe('Database Profiles', function () {
         ]);
 
         $mpesa = new Mpesa('disabled_db');
-
-        $calls = [];
-        $fakeClient = makeFakeGuzzleClient($calls);
-        setProtected($mpesa, 'client', $fakeClient);
         setProtected($mpesa, 'baseUrl', 'https://example.test');
 
         $mpesa->expressPayment(100, '254700000000');
 
-        $payload = json_decode($fakeClient->calls[0]['options']['body'], true);
+        $payload = darajaRequests()[0]->data();
         expect($payload['BusinessShortCode'])->toBe('222222');
     });
 
@@ -244,15 +220,11 @@ describe('Database Profiles', function () {
         ]);
 
         $mpesa = new Mpesa(); // no profile passed
-
-        $calls = [];
-        $fakeClient = makeFakeGuzzleClient($calls);
-        setProtected($mpesa, 'client', $fakeClient);
         setProtected($mpesa, 'baseUrl', 'https://example.test');
 
         $mpesa->expressPayment(100, '254700000000');
 
-        $payload = json_decode($fakeClient->calls[0]['options']['body'], true);
+        $payload = darajaRequests()[0]->data();
         expect($payload['BusinessShortCode'])->toBe('101010');
         expect($payload['CallBackURL'])->toBe('https://example.test/default-db-callback');
     });

@@ -116,15 +116,37 @@ $arrayData = [
     'BusinessShortCode' => $this->lipaNaMpesaShortcode,
     'Password' => base64_encode($this->lipaNaMpesaShortcode . $this->lipaNaMpesaPasskey . $timestamp),
     'Timestamp' => $timestamp,
-    'TransactionType' => 'CustomerPayBillOnline',
+    'TransactionType' => $lipaNaMpesaTransactionType, // CustomerPayBillOnline by default
     'Amount' => $amount,
     'PartyA' => $phoneNumber,
-    'PartyB' => $this->lipaNaMpesaShortcode,
+    'PartyB' => $lipaNaMpesaTillNumber ?: $this->lipaNaMpesaShortcode,
     'PhoneNumber' => $phoneNumber,
     'CallBackURL' => $this->lipaNaMpesaCallbackURL,
     'AccountReference' => $accountReference,
     'TransactionDesc' => $transactionDescription,
 ];
+```
+
+### Buy Goods Tills
+
+STK push to a till uses the `CustomerBuyGoodsOnline` transaction type. `BusinessShortCode` and the password use the store (head office) number and its passkey, and `PartyB` is the till number:
+
+```env
+LIPA_NA_MPESA_TRANSACTION_TYPE=CustomerBuyGoodsOnline
+LIPA_NA_MPESA_SHORTCODE=xxxxxx      # store / head office number
+LIPA_NA_MPESA_PASSKEY=xxxxxxxx      # passkey for the store number
+LIPA_NA_MPESA_TILL_NUMBER=xxxxxx    # till that receives the money
+```
+
+Or per call:
+
+```php
+Mpesa::for('tenant-id', [
+    'lipaNaMpesaTransactionType' => 'CustomerBuyGoodsOnline',
+    'lipaNaMpesaShortcode' => $storeNumber,
+    'lipaNaMpesaPasskey' => $passkey,
+    'lipaNaMpesaTillNumber' => $tillNumber,
+])->expressPayment(100, '254700000000');
 ```
 
 ### Querying Payment Status

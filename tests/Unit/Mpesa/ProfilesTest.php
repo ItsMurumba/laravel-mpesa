@@ -24,23 +24,11 @@ describe('Profiles (multi-tenant)', function () {
 
         $manager = new MpesaManager();
 
-        $callsA = [];
-        $fakeClientA = makeFakeGuzzleClient($callsA);
-        $mpesaA = $manager->for('default');
-        setProtected($mpesaA, 'client', $fakeClientA);
-        setProtected($mpesaA, 'baseUrl', 'https://example.test');
+        $manager->for('default')->expressPayment(10, '254700000000');
+        $manager->for('tenant_b')->expressPayment(10, '254700000000');
 
-        $callsB = [];
-        $fakeClientB = makeFakeGuzzleClient($callsB);
-        $mpesaB = $manager->for('tenant_b');
-        setProtected($mpesaB, 'client', $fakeClientB);
-        setProtected($mpesaB, 'baseUrl', 'https://example.test');
-
-        $mpesaA->expressPayment(10, '254700000000');
-        $mpesaB->expressPayment(10, '254700000000');
-
-        $payloadA = json_decode($fakeClientA->calls[0]['options']['body'], true);
-        $payloadB = json_decode($fakeClientB->calls[0]['options']['body'], true);
+        $payloadA = darajaRequests()[0]->data();
+        $payloadB = darajaRequests()[1]->data();
 
         expect($payloadA['BusinessShortCode'])->toBe('111111');
         expect($payloadB['BusinessShortCode'])->toBe('222222');

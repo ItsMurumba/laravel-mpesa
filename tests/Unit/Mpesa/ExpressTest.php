@@ -1,21 +1,11 @@
 <?php
 
 use Itsmurumba\Mpesa\Mpesa;
+use Itsmurumba\Mpesa\MpesaManager;
 
 describe('Mpesa Express (STK Push)', function () {
-    it('builds the correct payload for express payment', function () {
-        $mpesa = new Mpesa();
-
-        $calls = [];
-        $fakeClient = makeFakeGuzzleClient($calls);
-
-        setProtected($mpesa, 'client', $fakeClient);
-        setProtected($mpesa, 'baseUrl', 'https://example.test');
-        setProtected($mpesa, 'lipaNaMpesaShortcode', '654321');
-        setProtected($mpesa, 'lipaNaMpesaPasskey', 'passkey');
-        setProtected($mpesa, 'lipaNaMpesaCallbackURL', 'https://example.test/stk-callback');
-
-        $response = $mpesa->expressPayment(
+    it('builds the correct payload for a paybill by default', function () {
+        $response = (new Mpesa())->expressPayment(
             amount: 100,
             phoneNumber: '254700000000',
             accountReference: 'CompanyXLTD',
@@ -23,13 +13,15 @@ describe('Mpesa Express (STK Push)', function () {
         );
 
         expect($response)->toContain('"ok":true');
-        expect($fakeClient->calls)->toHaveCount(1);
+        expect(darajaRequests())->toHaveCount(1);
 
-        $call = $fakeClient->calls[0];
-        expect($call['url'])->toBe('https://example.test/mpesa/stkpush/v1/processrequest');
+        $request = darajaRequests()[0];
+        expect($request->url())->toBe('https://example.test/mpesa/stkpush/v1/processrequest');
+        expect($request->method())->toBe('POST');
 
-        $payload = json_decode($call['options']['body'], true);
+        $payload = $request->data();
         expect($payload['BusinessShortCode'])->toBe('654321');
+        expect($payload['PartyB'])->toBe('654321');
         expect($payload['Amount'])->toBe(100);
         expect($payload['PhoneNumber'])->toBe('254700000000');
         expect($payload['CallBackURL'])->toBe('https://example.test/stk-callback');
@@ -38,10 +30,23 @@ describe('Mpesa Express (STK Push)', function () {
             'Password',
             'Timestamp',
             'PartyA',
-            'PartyB',
             'AccountReference',
             'TransactionDesc',
         ]);
     });
-});
 
+    it('pays a Buy Goods till through for() overrides', function () {
+        (new MpesaManager())->for('tenant-x', [
+            'lipaNaMpesaShortcode' => '174379',
+            'lipaNaMpesaPasskey' => 'store-passkey',
+            'lipaNaMpesaTransactionType' => 'CustomerBuyGoodsOnline',
+            'lipaNaMpesaTillNumber' => '5566778',
+        ])->expressPayment(50, '254711111111');
+
+        $payload = darajaRequests()[0]->data();
+        expect($payload['TransactionType'])->toBe('CustomerBuyGoodsOnline');
+        expect($payload['BusinessShortCode'])->toBe('174379');
+        expect($payload['PartyB'])->toBe('5566778');
+        expect($payload['Password'])->toBe(base64_encode('174379' . 'store-passkey' . $payload['Timestamp']));
+    });
+});

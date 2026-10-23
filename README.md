@@ -7,7 +7,7 @@ Laravel package for the Safaricom M-Pesa Daraja API. Supports C2B, B2C, B2B, M-P
 ## Requirements
 
 - PHP 7.1+
-- Laravel 5.0+ (Laravel 8+ recommended)
+- Laravel 5.0+ (Laravel 8+ recommended; tested on 11, 12 and 13)
 - [Composer](https://getcomposer.org/)
 
 ## Installation
@@ -38,6 +38,8 @@ MPESA_CONSUMER_SECRET=
 LIPA_NA_MPESA_SHORTCODE=
 LIPA_NA_MPESA_PASSKEY=
 LIPA_NA_MPESA_CALLBACK_URL=
+LIPA_NA_MPESA_TRANSACTION_TYPE=CustomerPayBillOnline
+LIPA_NA_MPESA_TILL_NUMBER=
 MPESA_BASE_URL=https://sandbox.safaricom.co.ke
 MPESA_ENVIRONMENT=sandbox
 # ... (see docs for full list)
@@ -61,6 +63,23 @@ use Itsmurumba\Mpesa\Facades\Mpesa;
 
 Mpesa::for('tenant-id')->expressPayment($amount, $phoneNumber);
 ```
+
+Any config key can be overridden per call, so credentials can come from your own storage:
+
+```php
+Mpesa::for('tenant-id', [
+    'consumerKey' => $tenant->consumer_key,
+    'consumerSecret' => $tenant->consumer_secret,
+    'lipaNaMpesaShortcode' => $tenant->shortcode,
+    'lipaNaMpesaPasskey' => $tenant->passkey,
+])->expressPayment($amount, $phoneNumber);
+```
+
+**Buy Goods tills (STK push):** set `lipaNaMpesaTransactionType` to `CustomerBuyGoodsOnline` and `lipaNaMpesaTillNumber` to the till. `lipaNaMpesaShortcode` and `lipaNaMpesaPasskey` are then the store (head office) number and its passkey; the till is sent as `PartyB`. Paybills need neither key.
+
+**Errors and testing:** the access token is fetched on the first API call (not in the constructor) and reused until shortly before it expires. If it can't be obtained, `Itsmurumba\Mpesa\Exceptions\MpesaException` is thrown. All requests go through Laravel's `Http` client, so `Http::fake()` works in your tests. Daraja error responses (4xx/5xx) are returned as the raw JSON string like successful ones.
+
+**Initiator APIs (B2C, reversals, transaction status, account balance):** override `initiatorUsername` and either `initiatorPassword` (encrypted with Safaricom's certificate) or a pre-encrypted `securityCredential`.
 
 Profiles can be defined in config or stored in the database. [Multi-tenant setup →](https://mpesa.itsmurumba.dev/introduction/multi-tenant)
 

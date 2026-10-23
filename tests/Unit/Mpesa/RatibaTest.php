@@ -43,11 +43,6 @@ describe('Ratiba (Standing Orders)', function () {
 
     it('defaults business shortcode and callback url when null', function () {
         $mpesa = new Mpesa();
-
-        $calls = [];
-        $fakeClient = makeFakeGuzzleClient($calls);
-
-        setProtected($mpesa, 'client', $fakeClient);
         setProtected($mpesa, 'baseUrl', 'https://example.test');
         setProtected($mpesa, 'lipaNaMpesaShortcode', '654321');
         setProtected($mpesa, 'callBackURL', 'https://example.test/callback');
@@ -67,10 +62,10 @@ describe('Ratiba (Standing Orders)', function () {
             receiverPartyIdentifierType: '4'
         );
 
-        expect($fakeClient->calls)->toHaveCount(1);
-        expect($fakeClient->calls[0]['url'])->toBe('https://example.test/standingorder/v1/createStandingOrderExternal');
+        expect(darajaRequests())->toHaveCount(1);
+        expect(darajaRequests()[0]->url())->toBe('https://example.test/standingorder/v1/createStandingOrderExternal');
 
-        $payload = json_decode($fakeClient->calls[0]['options']['body'], true);
+        $payload = darajaRequests()[0]->data();
         expect($payload['BusinessShortCode'])->toBe('654321');
         expect($payload['CallBackURL'])->toBe('https://example.test/callback');
     });
