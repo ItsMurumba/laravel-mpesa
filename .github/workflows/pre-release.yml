@@ -27,8 +27,8 @@ jobs:
       - name: Get next pre-release version
         id: version
         run: |
-          # Latest stable tag (exclude pre-release tags like v1.0.9-dev.1)
-          LATEST=$(git tag -l 'v*' | grep -v '\-dev\.' | sort -V | tail -n1)
+          # Latest stable tag (vX.Y.Z); pre-releases such as v1.0.9-dev.1 or v2.0.0-rc.1 are skipped.
+          LATEST=$(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
           LATEST=${LATEST:-v1.0.8}
           LATEST=${LATEST#v}
           PARTS=(${LATEST//./ })
@@ -37,9 +37,9 @@ jobs:
           PATCH=${PARTS[2]:-8}
           NEXT_PATCH=$((PATCH + 1))
           BASE="v${MAJOR}.${MINOR}.${NEXT_PATCH}"
-          # Count existing pre-releases for this base
-          COUNT=$(git tag -l "${BASE}-dev.*" 2>/dev/null | wc -l | tr -d ' ')
-          N=$((COUNT + 1))
+          # One past the highest existing pre-release number for this base, so deleted tags leave no clash
+          LAST=$(git tag -l "${BASE}-dev.*" | sed 's/.*-dev\.//' | sort -n | tail -n1)
+          N=$((${LAST:-0} + 1))
           VERSION="${BASE}-dev.${N}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Pre-release version: ${VERSION}"

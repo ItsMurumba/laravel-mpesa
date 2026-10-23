@@ -29,8 +29,8 @@ jobs:
         env:
           MESSAGE: ${{ github.event.head_commit.message }}
         run: |
-          # Latest stable tag; pre-release tags (v1.0.9-dev.1) are skipped.
-          LATEST=$(git tag -l 'v*' | grep -v -- '-dev\.' | sort -V | tail -n1)
+          # Latest stable tag (vX.Y.Z); pre-releases such as v1.0.9-dev.1 or v2.0.0-rc.1 are skipped.
+          LATEST=$(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
           LATEST=${LATEST:-v1.0.8}
           IFS=. read -r MAJOR MINOR PATCH <<< "${LATEST#v}"
           if [[ "$MESSAGE" == *"[major]"* ]]; then
