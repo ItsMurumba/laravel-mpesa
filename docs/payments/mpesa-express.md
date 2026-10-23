@@ -45,9 +45,9 @@ Make sure your `config/mpesa.php` file contains the necessary M-Pesa Express set
 
 ```php
 return [
-    'lipaNaMpesaShortcode' => env('MPESA_LIPA_NA_MPESA_SHORTCODE'),
-    'lipaNaMpesaPasskey' => env('MPESA_LIPA_NA_MPESA_PASSKEY'),
-    'lipaNaMpesaCallbackURL' => env('MPESA_LIPA_NA_MPESA_CALLBACK_URL'),
+    'lipaNaMpesaShortcode' => env('LIPA_NA_MPESA_SHORTCODE'),
+    'lipaNaMpesaPasskey' => env('LIPA_NA_MPESA_PASSKEY'),
+    'lipaNaMpesaCallbackURL' => env('LIPA_NA_MPESA_CALLBACK_URL'),
     // ... other configuration
 ];
 ```
@@ -57,9 +57,9 @@ return [
 Add these to your `.env` file:
 
 ```env
-MPESA_LIPA_NA_MPESA_SHORTCODE=xxxxx
-MPESA_LIPA_NA_MPESA_PASSKEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-MPESA_LIPA_NA_MPESA_CALLBACK_URL=https://your-domain.com/mpesa/callback
+LIPA_NA_MPESA_SHORTCODE=xxxxx
+LIPA_NA_MPESA_PASSKEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+LIPA_NA_MPESA_CALLBACK_URL=https://your-domain.com/mpesa/callback
 ```
 
 ## API Endpoints
@@ -116,10 +116,10 @@ $arrayData = [
     'BusinessShortCode' => $this->lipaNaMpesaShortcode,
     'Password' => base64_encode($this->lipaNaMpesaShortcode . $this->lipaNaMpesaPasskey . $timestamp),
     'Timestamp' => $timestamp,
-    'TransactionType' => $lipaNaMpesaTransactionType, // CustomerPayBillOnline by default
+    'TransactionType' => $transactionType, // lipaNaMpesaTransactionType, CustomerPayBillOnline by default
     'Amount' => $amount,
     'PartyA' => $phoneNumber,
-    'PartyB' => $lipaNaMpesaTillNumber ?: $this->lipaNaMpesaShortcode,
+    'PartyB' => $this->configValue('lipaNaMpesaTillNumber') ?: $this->lipaNaMpesaShortcode,
     'PhoneNumber' => $phoneNumber,
     'CallBackURL' => $this->lipaNaMpesaCallbackURL,
     'AccountReference' => $accountReference,
@@ -278,8 +278,8 @@ For testing purposes, use the sandbox environment:
 
 ```php
 // Use sandbox credentials
-MPESA_LIPA_NA_MPESA_SHORTCODE=xxxxxx
-MPESA_LIPA_NA_MPESA_PASSKEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+LIPA_NA_MPESA_SHORTCODE=xxxxxx
+LIPA_NA_MPESA_PASSKEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 MPESA_BASE_URL=https://sandbox.safaricom.co.ke
 ```
 
@@ -332,7 +332,7 @@ try {
 Configure your callback URL in your environment:
 
 ```env
-MPESA_LIPA_NA_MPESA_CALLBACK_URL=https://your-domain.com/mpesa/callback
+LIPA_NA_MPESA_CALLBACK_URL=https://your-domain.com/mpesa/callback
 ```
 
 ### Callback Payload

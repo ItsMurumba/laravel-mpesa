@@ -164,11 +164,11 @@ For multiple paybills/tills (SaaS), see [Multi-tenant / Profiles](/introduction/
 
 ### Verify Configuration
 
-API methods return a **JSON string**; decode it before reading keys. Example route to verify config and auth:
+API methods return a **JSON string**; decode it before reading keys. Example route to verify config and auth against the **sandbox**. It sends a real STK push, so it only registers locally, needs a signed-in user, and should be removed once you've checked:
 
 ```php
 // routes/web.php
-Route::get('/test-mpesa', function () {
+if (app()->environment('local')) Route::middleware('auth')->get('/test-mpesa', function () {
     try {
         $mpesa = new \Itsmurumba\Mpesa\Mpesa();
 

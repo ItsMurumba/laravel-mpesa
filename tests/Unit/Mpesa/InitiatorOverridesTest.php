@@ -34,4 +34,16 @@ describe('Initiator credentials via for() overrides', function () {
         $credential = darajaRequests()[0]->data()['SecurityCredential'];
         expect(base64_decode($credential, true))->not->toBeFalse()->not->toBeEmpty();
     });
+
+    it('does not reuse the root security credential for a different initiator', function () {
+        config()->set('mpesa.securityCredential', 'root-credential');
+
+        (new MpesaManager())->for('tenant-x', [
+            'initiatorUsername' => 'tenant-operator',
+            'initiatorPassword' => 'tenant-password',
+        ])->reversals('QKA1B2C3D4', 100, '600000', '11', 'Refund');
+
+        expect(darajaRequests()[0]->data()['SecurityCredential'])->not->toBe('root-credential');
+    });
 });
+

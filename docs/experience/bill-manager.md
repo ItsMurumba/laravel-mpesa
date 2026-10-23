@@ -24,8 +24,8 @@ The M-Pesa Bill Manager API enables organizations to create, send, and manage el
 return [
     'environment' => env('MPESA_ENVIRONMENT', 'sandbox'), // sandbox or production
     'baseUrl' => env('MPESA_BASE_URL', 'https://sandbox.safaricom.co.ke'),
-    'lipaNaMpesaShortcode' => env('MPESA_LIPA_NA_MPESA_SHORTCODE', ''),
-    'lipaNaMpesaCallbackURL' => env('MPESA_LIPA_NA_MPESA_CALLBACK_URL', 'https://your-domain.com/mpesa/bill-manager/callback'),
+    'lipaNaMpesaShortcode' => env('LIPA_NA_MPESA_SHORTCODE', ''),
+    'lipaNaMpesaCallbackURL' => env('LIPA_NA_MPESA_CALLBACK_URL', 'https://your-domain.com/mpesa/bill-manager/callback'),
 ];
 ```
 
@@ -34,8 +34,8 @@ return [
 ```env
 MPESA_ENVIRONMENT=sandbox
 MPESA_BASE_URL=https://sandbox.safaricom.co.ke
-MPESA_LIPA_NA_MPESA_SHORTCODE=your_shortcode
-MPESA_LIPA_NA_MPESA_CALLBACK_URL=https://your-domain.com/mpesa/bill-manager/callback
+LIPA_NA_MPESA_SHORTCODE=your_shortcode
+LIPA_NA_MPESA_CALLBACK_URL=https://your-domain.com/mpesa/bill-manager/callback
 ```
 
 ## Usage

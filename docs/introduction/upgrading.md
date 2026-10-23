@@ -62,5 +62,5 @@ If you extend `Mpesa`, note that the protected `$client` property and the privat
 
 - Buy Goods tills for M-Pesa Express: `lipaNaMpesaTransactionType` and `lipaNaMpesaTillNumber`. See [M-Pesa Express](/payments/mpesa-express).
 - A pre-encrypted `securityCredential` can be used in place of encrypting `initiatorPassword`. See [Authorization](/security/authorization).
-- Multiple M-Pesa profiles, from config or the database, and per-call overrides through `Mpesa::for()`. See [Multi-tenant / Profiles](/introduction/multi-tenant).
+- Multiple M-Pesa profiles, from config or the database (secrets can be stored encrypted), and per-call overrides through `Mpesa::for()`. A profile name that isn't defined throws `MpesaException` rather than falling back to the default credentials, unless the call passes its own overrides. See [Multi-tenant / Profiles](/introduction/multi-tenant).
 - Laravel 13 support.

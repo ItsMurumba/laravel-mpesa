@@ -223,31 +223,18 @@ return [
     | Define one or more Mpesa profiles. This is useful for SaaS platforms where
     | each customer has their own paybill/till, keys, callbacks, etc.
     |
-    | NOTE:
-    | - Root-level keys above remain supported for backwards compatibility.
-    | - If a profile is selected, its keys override root-level keys.
+    | The root-level keys above are the default profile. A named profile only
+    | needs the keys that differ; the rest come from the root. Selecting a
+    | profile that isn't defined here (or in the database) throws, unless the
+    | call passes its own overrides.
     |
     */
     'profiles' => [
-        'default' => [
-            'consumerKey' => env('MPESA_CONSUMER_KEY'),
-            'consumerSecret' => env('MPESA_CONSUMER_SECRET'),
-            'callBackURL' => env('MPESA_CALLBACK_URL'),
-            'baseUrl' => env('MPESA_BASE_URL', 'https://sandbox.safaricom.co.ke'),
-            'paybillNumber' => env('MPESA_PAYBILL_NUMBER'),
-            'lipaNaMpesaShortcode' => env('LIPA_NA_MPESA_SHORTCODE'),
-            'lipaNaMpesaCallbackURL' => env('LIPA_NA_MPESA_CALLBACK_URL'),
-            'lipaNaMpesaPasskey' => env('LIPA_NA_MPESA_PASSKEY'),
-            'lipaNaMpesaTransactionType' => env('LIPA_NA_MPESA_TRANSACTION_TYPE', 'CustomerPayBillOnline'),
-            'lipaNaMpesaTillNumber' => env('LIPA_NA_MPESA_TILL_NUMBER'),
-            'confirmationURL' => env('MPESA_CONFIRMATION_URL'),
-            'validationURL' => env('MPESA_VALIDATION_URL'),
-            'initiatorUsername' => env('MPESA_INITIATOR_USERNAME'),
-            'initiatorPassword' => env('MPESA_INITIATOR_PASSWORD'),
-            'securityCredential' => env('MPESA_SECURITY_CREDENTIAL'),
-            'environment' => env('MPESA_ENVIRONMENT', 'sandbox'),
-            'queueTimeOutURL' => env('MPESA_QUEUE_TIMEOUT_URL'),
-            'resultURL' => env('MPESA_RESULT_URL'),
-        ],
+        // 'tenant_a' => [
+        //     'consumerKey' => env('TENANT_A_MPESA_CONSUMER_KEY'),
+        //     'consumerSecret' => env('TENANT_A_MPESA_CONSUMER_SECRET'),
+        //     'lipaNaMpesaShortcode' => env('TENANT_A_LIPA_NA_MPESA_SHORTCODE'),
+        //     'lipaNaMpesaPasskey' => env('TENANT_A_LIPA_NA_MPESA_PASSKEY'),
+        // ],
     ],
 ];

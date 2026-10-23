@@ -83,7 +83,7 @@ $response = Http::withHeaders([
 
 ### 3. Token Storage
 
-The package keeps the token on the instance until 60 seconds before `expires_in`, then fetches a new one on the next API call. A non-200 response, a response without a token, or a connection failure throws `MpesaException`.
+The package keeps the token on the instance until 60 seconds before `expires_in`, then fetches a new one on the next API call. A response outside 2xx, a response without `access_token` or `expires_in`, or a connection failure throws `MpesaException`.
 
 ### 4. Testing
 
