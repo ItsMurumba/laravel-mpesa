@@ -8,14 +8,19 @@ use Itsmurumba\Mpesa\MpesaServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    /**
+     * Fakes Daraja: the OAuth endpoint returns a token, every other endpoint returns
+     * `{"ok": true}`, and any unfaked request fails the test.
+     */
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Ensure Mpesa can be constructed without making real HTTP calls.
         Http::fake([
-            '*' => Http::response(['access_token' => 'test-token', 'expires_in' => 3599], 200),
+            '*/oauth/v1/generate*' => Http::response(['access_token' => 'test-token', 'expires_in' => 3599], 200),
+            '*' => Http::response(['ok' => true], 200),
         ]);
+        Http::preventStrayRequests();
     }
 
     protected function getPackageProviders($app)
@@ -25,9 +30,12 @@ abstract class TestCase extends Orchestra
         ];
     }
 
+    /**
+     * Sets base Mpesa config and supports both legacy single-config and profiles config.
+     */
     protected function defineEnvironment($app)
     {
-        $app['config']->set('mpesa', [
+        $base = [
             'consumerKey' => 'key',
             'consumerSecret' => 'secret',
             'callBackURL' => 'https://example.test/callback',
@@ -43,6 +51,13 @@ abstract class TestCase extends Orchestra
             'environment' => 'sandbox',
             'queueTimeOutURL' => 'https://example.test/timeout',
             'resultURL' => 'https://example.test/result',
-        ]);
+        ];
+
+        $app['config']->set('mpesa', array_merge($base, [
+            'default_profile' => 'default',
+            'profiles' => [
+                'default' => $base,
+            ],
+        ]));
     }
 }

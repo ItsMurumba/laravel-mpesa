@@ -14,11 +14,18 @@ class MpesaServiceProvider extends ServiceProvider
     public function boot()
     {
         $config = realpath(__DIR__ . '/../config/mpesa.php');
+        $migrations = realpath(__DIR__ . '/../database/migrations');
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 $config => $this->app->configPath('mpesa.php')
             ], 'mpesa-config');
+
+            if ($migrations) {
+                $this->publishes([
+                    $migrations => $this->app->databasePath('migrations')
+                ], 'mpesa-migrations');
+            }
 
             $this->commands([
                 InstallMpesaPackage::class,
@@ -27,13 +34,19 @@ class MpesaServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register the application services
+     * Register the application services.
+     *
+     * Binds 'mpesa' to MpesaManager (used by the facade for Mpesa::for('profile')->...).
+     * Binds 'laravel-mpesa' to the default Mpesa instance for backwards compatibility.
      */
     public function register()
     {
-        $this->app->bind('laravel-mpesa', function () {
+        $this->app->singleton('mpesa', function () {
+            return new MpesaManager();
+        });
 
-            return new Mpesa();
+        $this->app->bind('laravel-mpesa', function ($app) {
+            return $app->make('mpesa')->defaultInstance();
         });
     }
 
@@ -44,6 +57,6 @@ class MpesaServiceProvider extends ServiceProvider
     public function provides()
     {
 
-        return ['laravel-mpesa'];
+        return ['laravel-mpesa', 'mpesa'];
     }
 }

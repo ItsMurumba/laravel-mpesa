@@ -45,9 +45,9 @@ Make sure your `config/mpesa.php` file contains the necessary M-Pesa Express set
 
 ```php
 return [
-    'lipaNaMpesaShortcode' => env('MPESA_LIPA_NA_MPESA_SHORTCODE'),
-    'lipaNaMpesaPasskey' => env('MPESA_LIPA_NA_MPESA_PASSKEY'),
-    'lipaNaMpesaCallbackURL' => env('MPESA_LIPA_NA_MPESA_CALLBACK_URL'),
+    'lipaNaMpesaShortcode' => env('LIPA_NA_MPESA_SHORTCODE'),
+    'lipaNaMpesaPasskey' => env('LIPA_NA_MPESA_PASSKEY'),
+    'lipaNaMpesaCallbackURL' => env('LIPA_NA_MPESA_CALLBACK_URL'),
     // ... other configuration
 ];
 ```
@@ -57,9 +57,9 @@ return [
 Add these to your `.env` file:
 
 ```env
-MPESA_LIPA_NA_MPESA_SHORTCODE=174379
-MPESA_LIPA_NA_MPESA_PASSKEY=bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919
-MPESA_LIPA_NA_MPESA_CALLBACK_URL=https://your-domain.com/mpesa/callback
+LIPA_NA_MPESA_SHORTCODE=xxxxx
+LIPA_NA_MPESA_PASSKEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+LIPA_NA_MPESA_CALLBACK_URL=https://your-domain.com/mpesa/callback
 ```
 
 ## API Endpoints
@@ -116,16 +116,50 @@ $arrayData = [
     'BusinessShortCode' => $this->lipaNaMpesaShortcode,
     'Password' => base64_encode($this->lipaNaMpesaShortcode . $this->lipaNaMpesaPasskey . $timestamp),
     'Timestamp' => $timestamp,
-    'TransactionType' => 'CustomerPayBillOnline',
+    'TransactionType' => $transactionType, // lipaNaMpesaTransactionType, CustomerPayBillOnline by default
     'Amount' => $amount,
     'PartyA' => $phoneNumber,
-    'PartyB' => $this->lipaNaMpesaShortcode,
+    'PartyB' => $this->configValue('lipaNaMpesaTillNumber') ?: $this->lipaNaMpesaShortcode,
     'PhoneNumber' => $phoneNumber,
     'CallBackURL' => $this->lipaNaMpesaCallbackURL,
     'AccountReference' => $accountReference,
     'TransactionDesc' => $transactionDescription,
 ];
 ```
+
+### Buy Goods Tills
+
+Daraja's `TransactionType` is `CustomerPayBillOnline` for paybills and `CustomerBuyGoodsOnline` for tills. `BusinessShortCode` is the organisation's shortcode (paybill or Buy Goods), the password is `base64(BusinessShortCode + Passkey + Timestamp)`, and `PartyB`, who receives the money, can be the same as `BusinessShortCode`.
+
+A till with its own passkey only needs the transaction type:
+
+```env
+LIPA_NA_MPESA_TRANSACTION_TYPE=CustomerBuyGoodsOnline
+LIPA_NA_MPESA_SHORTCODE=xxxxxx      # the till
+LIPA_NA_MPESA_PASSKEY=xxxxxxxx      # its passkey
+```
+
+If Safaricom issued the passkey to another shortcode (such as the store or head office number), that number signs the request and the till receives the money as `PartyB`:
+
+```env
+LIPA_NA_MPESA_TRANSACTION_TYPE=CustomerBuyGoodsOnline
+LIPA_NA_MPESA_SHORTCODE=xxxxxx      # shortcode the passkey was issued to
+LIPA_NA_MPESA_PASSKEY=xxxxxxxx      # its passkey
+LIPA_NA_MPESA_TILL_NUMBER=xxxxxx    # till that receives the money
+```
+
+Or per call:
+
+```php
+Mpesa::for('tenant-id', [
+    'lipaNaMpesaTransactionType' => 'CustomerBuyGoodsOnline',
+    'lipaNaMpesaShortcode' => $shortcode,
+    'lipaNaMpesaPasskey' => $passkey,
+    'lipaNaMpesaTillNumber' => $tillNumber, // only when it differs from the shortcode
+])->expressPayment(100, '254700000000');
+```
+
+Any other transaction type throws `Itsmurumba\Mpesa\Exceptions\MpesaException` before a request is sent. Daraja limits `AccountReference` to 12 characters and `TransactionDesc` to 13.
 
 ### Querying Payment Status
 
@@ -153,6 +187,8 @@ $arrayData = [
 ```
 
 ## Response Format
+
+All API methods in this package return the **raw JSON string** from the M-Pesa API. Use `json_decode($response, true)` to get an array and read `ResponseCode`, `CheckoutRequestID`, etc.
 
 ### Initiate Payment Response
 
@@ -242,8 +278,8 @@ For testing purposes, use the sandbox environment:
 
 ```php
 // Use sandbox credentials
-MPESA_LIPA_NA_MPESA_SHORTCODE=174379
-MPESA_LIPA_NA_MPESA_PASSKEY=bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919
+LIPA_NA_MPESA_SHORTCODE=xxxxxx
+LIPA_NA_MPESA_PASSKEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 MPESA_BASE_URL=https://sandbox.safaricom.co.ke
 ```
 
@@ -296,7 +332,7 @@ try {
 Configure your callback URL in your environment:
 
 ```env
-MPESA_LIPA_NA_MPESA_CALLBACK_URL=https://your-domain.com/mpesa/callback
+LIPA_NA_MPESA_CALLBACK_URL=https://your-domain.com/mpesa/callback
 ```
 
 ### Callback Payload
@@ -435,7 +471,6 @@ dd([
 
 - [Authorization](../security/authorization.md)
 - [Getting Started](../introduction/getting-started.md)
-- [Configuration](../introduction/configuration.md)
 - [C2B Payments](./c2b.md)
-- [B2C Payments](./b2c.md)
+- [B2C Payments](../disbursements/b2c.md)
 - [Transaction Status](../experience/transaction-status.md)

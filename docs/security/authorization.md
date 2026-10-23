@@ -14,10 +14,11 @@ The authorization endpoint is used to obtain an access token that is required fo
 
 The package automatically handles the entire authorization process:
 
-1. **Token Generation**: When you instantiate the `Mpesa` class, it automatically generates an access token
-2. **Token Caching**: The token is stored with its expiry time
+1. **Token Generation**: The access token is fetched on the first API call, not when the `Mpesa` class is instantiated
+2. **Token Caching**: The token is kept on the instance until 60 seconds before it expires
 3. **Token Refresh**: When making API calls, the package checks if the token is expired and automatically refreshes it
-4. **Request Authentication**: All API requests are automatically authenticated with the current valid token
+4. **Failures**: If no token can be obtained, `Itsmurumba\Mpesa\Exceptions\MpesaException` is thrown and the API call is not sent
+5. **Request Authentication**: All API requests are automatically authenticated with the current valid token
 
 ### Implementation Details
 
@@ -25,7 +26,7 @@ The package automatically handles the entire authorization process:
 // The package automatically handles authorization
 $mpesa = new Mpesa();
 
-// Behind the scenes, the package:
+// On the first API call, the package:
 // 1. Reads your credentials from config
 // 2. Generates an access token
 // 3. Caches the token with expiry time
@@ -82,23 +83,17 @@ $response = Http::withHeaders([
 
 ### 3. Token Storage
 
-The package stores the token and its expiry time:
+The package keeps the token on the instance until 60 seconds before `expires_in`, then fetches a new one on the next API call. A response outside 2xx, a response without `access_token` or `expires_in`, or a connection failure throws `MpesaException`.
+
+### 4. Testing
+
+All requests (token and API calls) go through Laravel's `Http` client, so you can fake Safaricom in your tests:
 
 ```php
-$this->expiresIn = date('Y-m-d H:i:s', (time() + $response->expires_in));
-$this->accessToken = $response->access_token;
-```
-
-### 4. Automatic Token Refresh
-
-Before each API request, the package checks if the token is expired:
-
-```php
-if (isset($this->accessToken) && strtotime($this->expiresIn) > time()) {
-    $accessToken = $this->accessToken;
-} else {
-    $accessToken = $this->getAccessToken(); // Automatically refresh
-}
+Http::fake([
+    '*/oauth/v1/generate*' => Http::response(['access_token' => 'token', 'expires_in' => 3599]),
+    '*/mpesa/stkpush/v1/processrequest' => Http::response(['ResponseCode' => '0']),
+]);
 ```
 
 ## Response Format
@@ -109,7 +104,7 @@ if (isset($this->accessToken) && strtotime($this->expiresIn) > time()) {
 
 ```json
 {
-   "access_token": "c9SQxWWhmdVRlyh0zh8gZDTkubVF",
+   "access_token": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
    "expires_in": "3599"
 }
 ```
@@ -118,7 +113,7 @@ if (isset($this->accessToken) && strtotime($this->expiresIn) > time()) {
 
 | Name | Description | Type | Sample Values |
 |------|-------------|------|---------------|
-| `access_token` | Access token to access other APIs | String | `c9SQxWWhmdVRlyh0zh8gZDTkubVF` |
+| `access_token` | Access token to access other APIs | String | `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
 | `expires_in` | Token expiry time in seconds | Integer | `3599` |
 
 ## Testing
@@ -229,7 +224,5 @@ For testing purposes, you can use the sandbox environment:
 ## Related Documentation
 
 - [Getting Started](../introduction/getting-started.md)
-- [Configuration](../introduction/configuration.md)
-- [Error Handling](../introduction/error-handling.md)
 - [M-Pesa Express](../payments/mpesa-express.md)
 - [C2B Payments](../payments/c2b.md)

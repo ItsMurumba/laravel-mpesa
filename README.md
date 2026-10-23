@@ -1,132 +1,104 @@
-# Introduction
-This is a Laravel package for Safaricom Mpesa Daraja API. It includes all public available endpoints:
+# Laravel M-Pesa
 
-* Consumer to Business (C2B) payments
-* Business to Consumer (B2C) payments
-* Mpesa Express Payment (Lipa Na Mpesa Online)
-* Transaction Status
-* Account Balance
-* Reversal
-* Business to Business (B2B) payments
+Laravel package for the Safaricom M-Pesa Daraja API. Supports C2B, B2C, B2B, M-Pesa Express (STK Push), transaction status, account balance, reversals, dynamic QR, tax remittance, M-Pesa Ratiba, and more.
 
-# Installation
+**[Full documentation →](https://mpesa.itsmurumba.dev)**
 
-Run the following command to install Laravel Mpesa package in your Laravel project:
+## Requirements
 
-````
+- PHP 8.2+
+- Laravel 11, 12 or 13 (tested on 12 and 13)
+
+On an older Laravel or PHP version, use 1.x (`composer require itsmurumba/laravel-mpesa:^1.0`). Upgrading from 1.x? See the [upgrade guide](https://mpesa.itsmurumba.dev/introduction/upgrading).
+- [Composer](https://getcomposer.org/)
+
+## Installation
+
+```bash
 composer require itsmurumba/laravel-mpesa
-````
+```
 
-If you are using **Laravel 5.5** and above, skip to the [**Configurations**](https://github.com/ItsMurumba/laravel-mpesa#configurations) step.
+Publish the config file:
 
-After running the composer require above, you should add a service provider and alias of the package in config/app.php file.(For Laravel 5.4 and below)
+```bash
+php artisan vendor:publish --provider="Itsmurumba\Mpesa\MpesaServiceProvider" --tag=mpesa-config
+```
 
-````
-Itsmurumba\Mpesa\MpesaServiceProvider::class
-````
+## Configuration
 
-# Configurations
+Add your M-Pesa credentials to `.env`. See the [configuration guide](https://mpesa.itsmurumba.dev/introduction/getting-started#basic-configuration) for all options.
 
-After installing the package, run the following command to install `mpesa.php` configuartion file in the `config` folder:
-
-````
-php artisan mpesa:install
-````
-
-or 
-````
-php artisan vendor:publish
-````
-
-Add and define the following variables in your `.env` file
-
-````
+```env
 MPESA_CONSUMER_KEY=
 MPESA_CONSUMER_SECRET=
-MPESA_CALLBACK_URL=
-MPESA_BASE_URL=https://sandbox.safaricom.co.ke
-MPESA_PAYBILL_NUMBER=600978
-LIPA_NA_MPESA_SHORTCODE=174379
-LIPA_NA_MPESA_CALLBACK_URL=
+LIPA_NA_MPESA_SHORTCODE=
 LIPA_NA_MPESA_PASSKEY=
-MPESA_CONFIRMATION_URL=
-MPESA_VALIDATION_URL=
-MPESA_INITIATOR_USERNAME=
-MPESA_INITIATOR_PASSWORD=
+LIPA_NA_MPESA_CALLBACK_URL=
+LIPA_NA_MPESA_TRANSACTION_TYPE=CustomerPayBillOnline
+LIPA_NA_MPESA_TILL_NUMBER=
+MPESA_BASE_URL=https://sandbox.safaricom.co.ke
 MPESA_ENVIRONMENT=sandbox
-MPESA_QUEUE_TIMEOUT_URL=
-MPESA_RESULT_URL=
-````
+# ... (see docs for full list)
+```
 
-# Usage
-Add the following constructor inside your controller:
-`````
-protected $mpesa;
+## Usage
 
-public function __construct(){
-    $this->mpesa = new Mpesa();
-}
-`````
+**Single paybill/till:**
 
-**1. Mpesa Express Payment (Lipa Na Mpesa Online)**
-````
-$this->mpesa->expressPayment($amount, $phoneNumber, $accountReference = 'CompanyXLTD', $transactionDescription = 'Payment of X');
-````
-* $phoneNumber = 254XXXXXXXXX
-* $accountReference = Account Reference (maximum 12 characters)
-* transactionDescription = Transaction Description (1-13 characters)
+```php
+use Itsmurumba\Mpesa\Mpesa;
 
-**2. Mpesa Express Payment Query (Lipa Na Mpesa Online)**
-````
-$this->mpesa->expressPaymentQuery($checkoutRequestId);
-````
-**3. C2B Register URLs**
-````
-$this->mpesa->c2bRegisterURLs();
-````
+$mpesa = new Mpesa();
+$mpesa->expressPayment($amount, $phoneNumber);
+```
 
-**4. Consumer to Business (C2B) payments**
-````
-$this->mpesa->c2bPaymentc2bPayment($commandId, $amount, $phoneNumber, $billRefNumber); 
-````
-* $commandId = can only be set to **CustomerPayBillOnline** or **CustomerBuyGoodsOnline**
-* $billRefNumber = used on CustomerPayBillOnline option only e.g an Account Number. Set the value to `''` when commandId is **CustomerBuyGoodsOnline**
+**Multiple paybills (multi-tenant / SaaS):**
 
-**5. Business to Consumer (B2C) payments**
-````
-$this->mpesa->b2cPayment($commandId, $amount, $phoneNumber, $remarks, $occassion = '');
-````
-**6. Transaction Status**
-````
-$this->mpesa->transactionStatus($transactionId, $identifierType, $remarks, $occassion = '');
-````
-**7. Account Balance**
-````
-$this->mpesa->accountBalance($identifierType, $remarks);
-````
-**8. Reversal**
-````
-$this->mpesa->reversals($transactionId, $amount, $receiverParty, $receiverIdentifierType, $remarks, $occasion = '');
-````
-**9. Business to Business Payment(B2B)**
-````
-$this->mpesa->b2bPayment($commandId, $amount, $receiverShortcode, $accountReference, $remarks);
-````
+```php
+use Itsmurumba\Mpesa\Facades\Mpesa;
 
+Mpesa::for('tenant-id')->expressPayment($amount, $phoneNumber);
+```
 
-# Contribution
-This is a community package and thus welcome anyone intrested to contribute in improving the package. Kindly go through the [Contribution.md](Contribution.md) before starting to contribute. Keep those PRs and Issues coming.
+Any config key can be overridden per call, so credentials can come from your own storage:
 
-# Buy Me Coffee
-Give this repo a star and i will have my super powers recharged. You can also follow me on twitter [@ItsMurumba](https://twitter.com/ItsMurumba)
+```php
+Mpesa::for('tenant-id', [
+    'consumerKey' => $tenant->consumer_key,
+    'consumerSecret' => $tenant->consumer_secret,
+    'lipaNaMpesaShortcode' => $tenant->shortcode,
+    'lipaNaMpesaPasskey' => $tenant->passkey,
+])->expressPayment($amount, $phoneNumber);
+```
 
-# License
-This package is licensed under the MIT License. Please review the [License](LICENSE.md) file for details
+**Buy Goods tills (STK push):** set `lipaNaMpesaTransactionType` to `CustomerBuyGoodsOnline`. `BusinessShortCode` and the password use `lipaNaMpesaShortcode` and `lipaNaMpesaPasskey`, and `PartyB` is the same shortcode. If the till's passkey was issued to another shortcode (such as the store or head office number), put that number in `lipaNaMpesaShortcode` and the till in `lipaNaMpesaTillNumber`; the till is then sent as `PartyB`. Paybills leave both at their defaults; they still need `lipaNaMpesaShortcode` and `lipaNaMpesaPasskey`.
 
+**Errors and testing:** the access token is fetched on the first API call (not in the constructor) and reused until shortly before it expires. If it can't be obtained, `Itsmurumba\Mpesa\Exceptions\MpesaException` is thrown. All requests go through Laravel's `Http` client, so `Http::fake()` works in your tests. Daraja error responses (4xx/5xx) are returned as the raw JSON string like successful ones.
 
+**Initiator APIs (B2C, reversals, transaction status, account balance):** override `initiatorUsername` and either `initiatorPassword` (encrypted with Safaricom's certificate) or a pre-encrypted `securityCredential`.
 
+Profiles can be defined in config or stored in the database. [Multi-tenant setup →](https://mpesa.itsmurumba.dev/introduction/multi-tenant)
 
+## Supported APIs
 
+M-Pesa Express, C2B, B2C, B2B, Paybill, Buy Goods, B2B Express Checkout, Dynamic QR, Tax Remittance, M-Pesa Ratiba, Account Balance, Transaction Status, Reversals, Bill Manager. Method signatures and examples are in the [documentation](https://mpesa.itsmurumba.dev).
 
+## Docs (GitHub Pages)
 
+The documentation in `docs/` is built with [VitePress](https://vitepress.dev) and deployed automatically via GitHub Actions.
 
+**One-time setup:** In the repo go to **Settings → Pages**. Under "Build and deployment", set **Source** to **GitHub Actions**.
+
+After that, every push to `main` that changes files under `docs/` will build and deploy the site. The workflow file is [`.github/workflows/deploy-docs.yml`](.github/workflows/deploy-docs.yml). If you use a custom domain for Pages, set `base: '/'` in `docs/.vitepress/config.mjs` (it is currently `'/laravel-mpesa/'` for the default `https://<owner>.github.io/laravel-mpesa/` URL).
+
+## Contributing
+
+Contributions are welcome. Please read [Contribution.md](Contribution.md) before submitting PRs or issues.
+
+## License
+
+MIT. See [LICENSE](LICENSE) for details.
+
+---
+
+Give the repo a star to support the project. Follow [@ItsMurumba](https://twitter.com/ItsMurumba) on Twitter.

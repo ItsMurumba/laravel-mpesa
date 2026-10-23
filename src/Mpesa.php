@@ -2,15 +2,28 @@
 
 namespace Itsmurumba\Mpesa;
 
-use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
+use Illuminate\Http\Client\ConnectionException;
 use Itsmurumba\Mpesa\Exceptions\IsNullException;
+use Itsmurumba\Mpesa\Exceptions\MpesaException;
 
 class Mpesa
 {
+    /**
+     * Resolved configuration for this Mpesa instance (profile + overrides applied).
+     */
+    protected $config = [];
+
+    /**
+     * The selected profile name (if any).
+     */
+    protected $profile;
+
     /**
      * Consumer Key from the app on developer.safaricom.co.ke
      */
@@ -20,11 +33,6 @@ class Mpesa
      * Consumer Secret from the app on developer.safaricom.co.ke
      */
     protected $consumerSecret;
-
-    /**
-     * Instance of Client
-     */
-    protected $client;
 
     /**
      * Mpesa API base URL
@@ -52,9 +60,9 @@ class Mpesa
     protected $accessToken;
 
     /**
-     * Expiry time for the access token
+     * Unix timestamp after which the access token is treated as expired.
      *
-     * @var [type]
+     * @var int|null
      */
     protected $expiresIn;
 
@@ -62,11 +70,6 @@ class Mpesa
      * Lipa na Mpesa Shortcode
      */
     protected $lipaNaMpesaShortcode;
-
-    /**
-     * Lipa na Mpesa Callback URL
-     */
-    protected $çç;
 
     /**
      * Lipa na Mpesa Passkey
@@ -111,10 +114,22 @@ class Mpesa
      */
     protected $resultURL;
 
+    /**
+     * Lipa na Mpesa callback URL for STK Push notifications.
+     */
     protected $lipaNaMpesaCallbackURL;
 
-    public function __construct()
+    /**
+     * Create an Mpesa client for a specific profile.
+     *
+     * @param  string|null  $profile
+     * @param  array  $overrides
+     */
+    public function __construct($profile = null, array $overrides = [])
     {
+        $this->profile = $profile;
+        $this->config = $this->resolveConfig($profile, $overrides);
+
         $this->setConsumerKey();
         $this->setConsumerSecret();
         $this->setBaseUrl();
@@ -130,7 +145,130 @@ class Mpesa
         $this->setEnvironment();
         $this->setQueueTimeOutURL();
         $this->setResultURL();
-        $this->setRequestOptions();
+    }
+
+    /**
+     * Resolve config for a given profile (supports database + config-based profiles).
+     *
+     * Resolution order: root config as defaults, then the database profile (if enabled and
+     * found) or else the config profile, then overrides. Empty database fields keep the root
+     * value. A layer that changes the initiator without its own `securityCredential` drops
+     * the inherited one, so the new initiator's password is encrypted instead.
+     *
+     * @param  string|null  $profile  Profile name, or null for default.
+     * @param  array  $overrides  Optional key-value overrides applied last.
+     * @return array
+     *
+     * @throws MpesaException When a named profile other than the default is not found and no overrides are given.
+     */
+    protected function resolveConfig($profile = null, array $overrides = [])
+    {
+        $root = (array) Config::get('mpesa', []);
+
+        $resolved = $root;
+        unset($resolved['profiles'], $resolved['default_profile'], $resolved['use_database']);
+
+        $useDatabase = filter_var($root['use_database'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $defaultProfile = $root['default_profile'] ?? 'default';
+        $profileName = $profile ?: $defaultProfile;
+
+        $layer = $useDatabase ? $this->resolveFromDatabase($profileName) : null;
+
+        if (! $layer && isset($root['profiles'][$profileName]) && is_array($root['profiles'][$profileName])) {
+            $layer = $root['profiles'][$profileName];
+        }
+
+        if (! $layer && empty($overrides) && $profileName !== $defaultProfile) {
+            throw new MpesaException("M-Pesa profile [{$profileName}] was not found.");
+        }
+
+        foreach ([$layer ?: [], $overrides] as $values) {
+            $resolved = $this->mergeLayer($resolved, $values);
+        }
+
+        return $resolved;
+    }
+
+    /**
+     * Merge one layer of config over another.
+     *
+     * @param  array  $resolved
+     * @param  array  $values
+     * @return array
+     */
+    private function mergeLayer(array $resolved, array $values)
+    {
+        $changesInitiator = array_key_exists('initiatorUsername', $values) || array_key_exists('initiatorPassword', $values);
+
+        if ($changesInitiator && ! array_key_exists('securityCredential', $values)) {
+            $resolved['securityCredential'] = null;
+        }
+
+        return array_merge($resolved, $values);
+    }
+
+    /**
+     * Resolve profile configuration from database.
+     *
+     * Returns a config-style array (camelCase keys) with empty fields left out, or null if the
+     * table is missing, the profile is not found, or the profile is inactive. Secrets stored
+     * with `Crypt::encryptString()` are decrypted.
+     *
+     * @param  string  $profileName
+     * @return array|null
+     */
+    protected function resolveFromDatabase($profileName)
+    {
+        if (! DB::getSchemaBuilder()->hasTable('mpesa_profiles')) {
+            return null;
+        }
+
+        $profile = DB::table('mpesa_profiles')
+            ->where('name', $profileName)
+            ->where('is_active', true)
+            ->first();
+
+        if (! $profile) {
+            return null;
+        }
+
+        return array_filter([
+            'consumerKey' => $profile->consumer_key,
+            'consumerSecret' => $this->maybeDecrypt($profile->consumer_secret),
+            'baseUrl' => $profile->base_url,
+            'paybillNumber' => $profile->paybill_number,
+            'lipaNaMpesaShortcode' => $profile->lipa_na_mpesa_shortcode,
+            'lipaNaMpesaPasskey' => $this->maybeDecrypt($profile->lipa_na_mpesa_passkey),
+            'lipaNaMpesaCallbackURL' => $profile->lipa_na_mpesa_callback_url,
+            'lipaNaMpesaTransactionType' => $profile->lipa_na_mpesa_transaction_type,
+            'lipaNaMpesaTillNumber' => $profile->lipa_na_mpesa_till_number,
+            'callBackURL' => $profile->callback_url,
+            'confirmationURL' => $profile->confirmation_url,
+            'validationURL' => $profile->validation_url,
+            'initiatorUsername' => $profile->initiator_username,
+            'initiatorPassword' => $this->maybeDecrypt($profile->initiator_password),
+            'securityCredential' => $this->maybeDecrypt($profile->security_credential),
+            'environment' => $profile->environment,
+            'queueTimeOutURL' => $profile->queue_timeout_url,
+            'resultURL' => $profile->result_url,
+        ], fn ($value) => $value !== null && $value !== '');
+    }
+
+    /**
+     * Try to decrypt a value if it looks like it was encrypted by Laravel.
+     * If decryption fails, return the original value.
+     */
+    protected function maybeDecrypt($value)
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        try {
+            return Crypt::decryptString($value);
+        } catch (\Throwable $e) {
+            return $value;
+        }
     }
 
     /**
@@ -138,7 +276,7 @@ class Mpesa
      */
     public function setConsumerKey()
     {
-        $this->consumerKey = Config::get('mpesa.consumerKey');
+        $this->consumerKey = $this->configValue('consumerKey');
     }
 
     /**
@@ -146,7 +284,7 @@ class Mpesa
      */
     public function setConsumerSecret()
     {
-        $this->consumerSecret = Config::get('mpesa.consumerSecret');
+        $this->consumerSecret = $this->configValue('consumerSecret');
     }
 
     /**
@@ -154,7 +292,7 @@ class Mpesa
      */
     public function setBaseUrl()
     {
-        $this->baseUrl = Config::get('mpesa.baseUrl');
+        $this->baseUrl = $this->configValue('baseUrl');
     }
 
     /**
@@ -162,7 +300,7 @@ class Mpesa
      */
     public function setPaybillNumber()
     {
-        $this->payBillNumber = Config::get('mpesa.paybillNumber');
+        $this->payBillNumber = $this->configValue('paybillNumber');
     }
 
     /**
@@ -170,7 +308,7 @@ class Mpesa
      */
     public function setCallBackURL()
     {
-        $this->callBackURL = Config::get('mpesa.callBackURL');
+        $this->callBackURL = $this->configValue('callBackURL');
     }
 
     /**
@@ -180,7 +318,7 @@ class Mpesa
      */
     public function setLipaNaMpesaShortcode()
     {
-        $this->lipaNaMpesaShortcode = Config::get('mpesa.lipaNaMpesaShortcode');
+        $this->lipaNaMpesaShortcode = $this->configValue('lipaNaMpesaShortcode');
     }
 
     /**
@@ -190,7 +328,7 @@ class Mpesa
      */
     public function setLipaNaMpesaCallbackURL()
     {
-        $this->lipaNaMpesaCallbackURL = Config::get('mpesa.lipaNaMpesaCallbackURL');
+        $this->lipaNaMpesaCallbackURL = $this->configValue('lipaNaMpesaCallbackURL');
     }
 
     /**
@@ -200,7 +338,7 @@ class Mpesa
      */
     public function setLipaNaMpesaPasskey()
     {
-        $this->lipaNaMpesaPasskey = Config::get('mpesa.lipaNaMpesaPasskey');
+        $this->lipaNaMpesaPasskey = $this->configValue('lipaNaMpesaPasskey');
     }
 
     /**
@@ -211,7 +349,7 @@ class Mpesa
      */
     public function setConfirmationURL()
     {
-        $this->confirmationURL = Config::get('mpesa.confirmationURL');
+        $this->confirmationURL = $this->configValue('confirmationURL');
     }
 
     /**
@@ -224,7 +362,7 @@ class Mpesa
      */
     public function setValidationURL()
     {
-        $this->validationURL = Config::get('mpesa.validationURL');
+        $this->validationURL = $this->configValue('validationURL');
     }
 
     /**
@@ -234,7 +372,7 @@ class Mpesa
      */
     private function setInitiatorUsername()
     {
-        $this->initiatorUsername = Config::get('mpesa.initiatorUsername');
+        $this->initiatorUsername = $this->configValue('initiatorUsername');
     }
 
     /**
@@ -244,7 +382,7 @@ class Mpesa
      */
     private function setInitiatorPassword()
     {
-        $this->initiatorPassword = Config::get('mpesa.initiatorPassword');
+        $this->initiatorPassword = $this->configValue('initiatorPassword');
     }
 
     /**
@@ -254,7 +392,7 @@ class Mpesa
      */
     public function setEnvironment()
     {
-        $this->environment = Config::get('mpesa.environment');
+        $this->environment = $this->configValue('environment');
     }
 
     /**
@@ -264,7 +402,7 @@ class Mpesa
      */
     public function setQueueTimeOutURL()
     {
-        $this->queueTimeOutURL = Config::get('mpesa.queueTimeOutURL');
+        $this->queueTimeOutURL = $this->configValue('queueTimeOutURL');
     }
 
     /**
@@ -274,93 +412,106 @@ class Mpesa
      */
     public function setResultURL()
     {
-        $this->resultURL = Config::get('mpesa.resultURL');
+        $this->resultURL = $this->configValue('resultURL');
     }
 
-    /**
-     * Set options for making the Client requests.
-     */
-    private function setRequestOptions()
+    protected function configValue($key, $default = null)
     {
-
-        if (isset($this->accessToken) && strtotime($this->expiresIn) > time()) {
-            $accessToken = $this->accessToken;
-        } else {
-            $accessToken = $this->getAccessToken();
+        if (array_key_exists($key, $this->config)) {
+            return $this->config[$key];
         }
 
-        $authBearer = 'Bearer ' . $accessToken;
-
-        $this->client = new Client(
-            [
-                'base_uri' => $this->baseUrl,
-                'headers' => [
-                    'Authorization' => $authBearer,
-                    'Content-Type' => 'application/json',
-                ],
-            ]
-        );
+        return $default;
     }
 
     /**
-     * setHttpResponse to handle all the API request responses
+     * Send a request to Daraja through Laravel's Http client, so it can be faked in tests.
      *
-     * @param [type] $relativeUrl
-     * @param [type] $method
-     * @param  array  $body
-     * @return void
+     * @param  string  $relativeUrl  Path relative to the base URL.
+     * @param  string|null  $method  HTTP method.
+     * @param  array  $data  JSON body.
+     * @return string The raw response body (Daraja's JSON, including error responses).
+     *
+     * @throws IsNullException When no method is given.
+     * @throws MpesaException When no access token can be obtained.
      */
     private function setHttpResponse($relativeUrl, $method, $data)
     {
-
         if (is_null($method)) {
             throw new IsNullException('Empty method not allowed');
         }
 
-        $response = $this->client->{strtolower($method)}(
-            $this->baseUrl . $relativeUrl,
-            [
-                'body' => json_encode($data),
-            ]
-        );
-
-        return $response->getBody()->getContents();
+        return Http::withToken($this->accessToken())
+            ->asJson()
+            ->send(strtoupper($method), $this->baseUrl . $relativeUrl, ['json' => $data])
+            ->body();
     }
 
     /**
-     * Get Access Token to be used in allowed API requests
+     * Get a valid access token, fetching a new one only when none is held or it is about to expire.
+     *
+     * @return string
+     *
+     * @throws MpesaException
+     */
+    private function accessToken()
+    {
+        if ($this->accessToken && $this->expiresIn > time()) {
+            return $this->accessToken;
+        }
+
+        return $this->getAccessToken();
+    }
+
+    /**
+     * Fetch a new access token from Daraja's OAuth endpoint.
+     *
+     * The token is held until 60 seconds before Daraja's `expires_in`.
+     *
+     * @return string
+     *
+     * @throws MpesaException When the request fails or the response has no token.
      */
     private function getAccessToken()
     {
-        $response = Http::withHeaders([
-            'Authorization' => 'Basic ' . base64_encode($this->consumerKey . ':' . $this->consumerSecret),
-        ])->get(
-            $this->baseUrl . '/oauth/v1/generate?grant_type=client_credentials'
-        );
-
-        if ($response->status() == 200) {
-            $response = json_decode($response);
-
-            $this->expiresIn = date('Y-m-d H:i:s', (time() + $response->expires_in));
-            $this->accessToken = $response->access_token;
-
-            return $response->access_token;
-        } else {
-            return false;
+        try {
+            /** @var \Illuminate\Http\Client\Response $response */
+            $response = Http::withHeaders([
+                'Authorization' => 'Basic ' . base64_encode($this->consumerKey . ':' . $this->consumerSecret),
+            ])->get($this->baseUrl . '/oauth/v1/generate?grant_type=client_credentials');
+        } catch (ConnectionException $e) {
+            throw new MpesaException('Could not obtain an M-Pesa access token: ' . $e->getMessage(), 0, $e);
         }
+
+        $data = $response->object();
+
+        if (! $response->successful() || ! $data || empty($data->access_token) || empty($data->expires_in)) {
+            throw new MpesaException('Could not obtain an M-Pesa access token (HTTP ' . $response->status() . ').');
+        }
+
+        $this->accessToken = (string) $data->access_token;
+        $this->expiresIn = time() + (int) $data->expires_in - 60;
+
+        return $this->accessToken;
     }
 
     /**
-     * Encryption of Security credentials to be used in the following API calls:
+     * Security credential for the following API calls. Uses the pre-encrypted `securityCredential`
+     * config value when set (e.g. one generated on the Daraja portal), otherwise encrypts the
+     * initiator password with Safaricom's public certificate:
      * B2C
      * B2B
      * Transaction Status Query API
      * Reversal API
      *
-     * @return void
+     * @return string
      */
     private function setSecurityCredentials()
     {
+        if ($securityCredential = $this->configValue('securityCredential')) {
+            return $securityCredential;
+        }
+
         if ($this->environment == 'production') {
             $publicKey = File::get(__DIR__ . '/certificates/production.cer');
         } else {
@@ -377,24 +528,40 @@ class Mpesa
     /**
      * Mpesa Express: Initiates online payment on behalf of a customer.
      *
+     * Paybill by default. For a Buy Goods till set `lipaNaMpesaTransactionType` to
+     * `CustomerBuyGoodsOnline` (Daraja's values: `CustomerPayBillOnline` for paybills,
+     * `CustomerBuyGoodsOnline` for tills). `BusinessShortCode` and the password always use
+     * `lipaNaMpesaShortcode` and `lipaNaMpesaPasskey`. `PartyB`, who receives the money, is
+     * the same shortcode unless `lipaNaMpesaTillNumber` is set, for a till whose passkey was
+     * issued to another shortcode. Daraja limits `AccountReference` to 12 characters and
+     * `TransactionDesc` to 13.
+     *
+     * @throws MpesaException When the transaction type isn't one Daraja accepts.
+     *
      * @param [type] $amount
      * @param [type] $phoneNumber
      * @param  string  $accountReference
      * @param  string  $transactionDescription
-     * @return void
+     * @return string
      */
     public function expressPayment($amount, $phoneNumber, $accountReference = 'CompanyXLTD', $transactionDescription = 'Payment of X')
     {
+        $transactionType = $this->configValue('lipaNaMpesaTransactionType') ?: 'CustomerPayBillOnline';
+
+        if (! in_array($transactionType, ['CustomerPayBillOnline', 'CustomerBuyGoodsOnline'], true)) {
+            throw new MpesaException("Unsupported M-Pesa Express transaction type [{$transactionType}]: use CustomerPayBillOnline or CustomerBuyGoodsOnline.");
+        }
+
         $timestamp = date('YmdHis');
 
         $arrayData = [
             'BusinessShortCode' => $this->lipaNaMpesaShortcode,
             'Password' => base64_encode($this->lipaNaMpesaShortcode . $this->lipaNaMpesaPasskey . $timestamp),
             'Timestamp' => $timestamp,
-            'TransactionType' => 'CustomerPayBillOnline',
+            'TransactionType' => $transactionType,
             'Amount' => $amount,
             'PartyA' => $phoneNumber,
-            'PartyB' => $this->lipaNaMpesaShortcode,
+            'PartyB' => $this->configValue('lipaNaMpesaTillNumber') ?: $this->lipaNaMpesaShortcode,
             'PhoneNumber' => $phoneNumber,
             'CallBackURL' => $this->lipaNaMpesaCallbackURL,
             'AccountReference' => $accountReference,
@@ -411,7 +578,7 @@ class Mpesa
      * Check the status of a Lipa Na M-Pesa Online Payment.
      *
      * @param [type] $checkoutRequestId
-     * @return void
+     * @return string
      */
     public function expressPaymentQuery($checkoutRequestId)
     {
@@ -433,7 +600,7 @@ class Mpesa
      * Customer To Business Register URL:
      * Register validation and confirmation URLs on M-Pesa
      *
-     * @return void
+     * @return string
      */
     public function c2bRegisterURLs()
     {
@@ -456,7 +623,7 @@ class Mpesa
      * @param [type] $amount
      * @param [type] $phoneNumber
      * @param [type] $billRefNumber
-     * @return void
+     * @return string
      */
     public function c2bPayment($commandId, $amount, $phoneNumber, $billRefNumber)
     {
@@ -482,7 +649,7 @@ class Mpesa
      * @param [type] $phoneNumber
      * @param [type] $remarks
      * @param  string  $occassion
-     * @return void
+     * @return string
      */
     public function b2cPayment($commandId, $amount, $phoneNumber, $remarks, $occassion = '')
     {
@@ -513,7 +680,7 @@ class Mpesa
      * @param [type] $identifierType
      * @param [type] $remarks
      * @param  string  $occassion
-     * @return void
+     * @return string
      */
     public function transactionStatus($transactionId, $identifierType, $remarks, $occassion = '')
     {
@@ -541,7 +708,7 @@ class Mpesa
      *
      * @param [type] $identifierType
      * @param [type] $remarks
-     * @return void
+     * @return string
      */
     public function accountBalance($identifierType, $remarks)
     {
@@ -571,7 +738,7 @@ class Mpesa
      * @param [type] $receiverIdentifierType
      * @param [type] $remarks
      * @param  string  $occasion
-     * @return void
+     * @return string
      */
     public function reversals($transactionId, $amount, $receiverParty, $receiverIdentifierType, $remarks, $occasion = '')
     {
@@ -604,7 +771,7 @@ class Mpesa
      * @param [type] $receiverShortcode
      * @param [type] $accountReference
      * @param [type] $remarks
-     * @return void
+     * @return string
      */
     public function b2bPayment($commandId, $amount, $receiverShortcode, $accountReference, $remarks)
     {

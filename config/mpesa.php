@@ -3,6 +3,31 @@
 return [
     /*
     |--------------------------------------------------------------------------
+    | Default Profile
+    |--------------------------------------------------------------------------
+    |
+    | When using multi-tenant / multi-shortcode setups, you can define multiple
+    | Mpesa profiles under `profiles` and choose which one to use at runtime.
+    |
+    | `Mpesa::for('tenant-a')` will use the profile with that key.
+    |
+    */
+    'default_profile' => env('MPESA_DEFAULT_PROFILE', 'default'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Use Database for Profiles
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, the package will check the `mpesa_profiles` table first
+    | before falling back to config-based profiles. Useful for SaaS platforms
+    | where tenants are added dynamically.
+    |
+    */
+    'use_database' => env('MPESA_USE_DATABASE', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Consumer Key
     |--------------------------------------------------------------------------
     |
@@ -85,6 +110,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Lipa na Mpesa Transaction Type
+    |--------------------------------------------------------------------------
+    |
+    | `CustomerPayBillOnline` for a paybill (default) or `CustomerBuyGoodsOnline`
+    | for a Buy Goods till, as Daraja defines them. `BusinessShortCode` and the
+    | password always use `lipaNaMpesaShortcode` and `lipaNaMpesaPasskey`.
+    |
+    */
+    'lipaNaMpesaTransactionType' => env('LIPA_NA_MPESA_TRANSACTION_TYPE', 'CustomerPayBillOnline'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Lipa na Mpesa Till Number
+    |--------------------------------------------------------------------------
+    |
+    | Sent as `PartyB` in STK push, the shortcode that receives the money.
+    | Leave empty when that's `lipaNaMpesaShortcode` itself (every paybill, and a
+    | till with its own passkey). Set it when the till's passkey was issued to
+    | another shortcode, such as the store or head office number.
+    |
+    */
+    'lipaNaMpesaTillNumber' => env('LIPA_NA_MPESA_TILL_NUMBER'),
+
+    /*
+    |--------------------------------------------------------------------------
     | C2B Confirmation URL
     |--------------------------------------------------------------------------
     |
@@ -125,6 +175,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Mpesa Security Credential
+    |--------------------------------------------------------------------------
+    |
+    | Optional pre-encrypted security credential (e.g. generated on the Daraja
+    | portal). When set it is sent as-is instead of encrypting the initiator
+    | password with Safaricom's certificate.
+    |
+    */
+    'securityCredential' => env('MPESA_SECURITY_CREDENTIAL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Environment
     |--------------------------------------------------------------------------
     |
@@ -152,4 +214,27 @@ return [
     |
     */
     'resultURL' => env('MPESA_RESULT_URL'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Profiles (Multi-tenant)
+    |--------------------------------------------------------------------------
+    |
+    | Define one or more Mpesa profiles. This is useful for SaaS platforms where
+    | each customer has their own paybill/till, keys, callbacks, etc.
+    |
+    | The root-level keys above are the default profile. A named profile only
+    | needs the keys that differ; the rest come from the root. Selecting a
+    | profile that isn't defined here (or in the database) throws, unless the
+    | call passes its own overrides.
+    |
+    */
+    'profiles' => [
+        // 'tenant_a' => [
+        //     'consumerKey' => env('TENANT_A_MPESA_CONSUMER_KEY'),
+        //     'consumerSecret' => env('TENANT_A_MPESA_CONSUMER_SECRET'),
+        //     'lipaNaMpesaShortcode' => env('TENANT_A_LIPA_NA_MPESA_SHORTCODE'),
+        //     'lipaNaMpesaPasskey' => env('TENANT_A_LIPA_NA_MPESA_PASSKEY'),
+        // ],
+    ],
 ];

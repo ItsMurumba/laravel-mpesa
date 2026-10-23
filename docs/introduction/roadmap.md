@@ -171,7 +171,7 @@ For questions, suggestions, or contributions, please:
 
 - **GitHub Issues**: [Submit issues](https://github.com/itsmurumba/laravel-mpesa/issues)
 - **Discussions**: [Join discussions](https://github.com/itsmurumba/laravel-mpesa/discussions)
-- **Contributing**: [Read contribution guide](../../Contribution.md)
+- **Contributing**: [Read contribution guide](https://github.com/ItsMurumba/laravel-mpesa/blob/main/Contribution.md)
 
 ---
 
