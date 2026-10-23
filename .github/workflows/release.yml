@@ -19,23 +19,30 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Get next version (patch bump)
+      - name: Get next version
         id: version
+        env:
+          MESSAGE: ${{ github.event.head_commit.message }}
         run: |
-          LATEST=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || echo "v1.0.8")
-          LATEST=${LATEST#v}
-          PARTS=(${LATEST//./ })
-          MAJOR=${PARTS[0]:-1}
-          MINOR=${PARTS[1]:-0}
-          PATCH=${PARTS[2]:-8}
-          NEXT_PATCH=$((PATCH + 1))
-          echo "version=v${MAJOR}.${MINOR}.${NEXT_PATCH}" >> "$GITHUB_OUTPUT"
-          echo "Next version: v${MAJOR}.${MINOR}.${NEXT_PATCH}"
+          # Latest stable tag; pre-release tags (v1.0.9-dev.1) are skipped.
+          LATEST=$(git tag -l 'v*' | grep -v -- '-dev\.' | sort -V | tail -n1)
+          LATEST=${LATEST:-v1.0.8}
+          IFS=. read -r MAJOR MINOR PATCH <<< "${LATEST#v}"
+          if [[ "$MESSAGE" == *"[major]"* ]]; then
+            VERSION="v$((MAJOR + 1)).0.0"
+          elif [[ "$MESSAGE" == *"[minor]"* ]]; then
+            VERSION="v${MAJOR}.$((MINOR + 1)).0"
+          else
+            VERSION="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Next version: ${VERSION}"
 
       - name: Create tag and release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
           name: ${{ steps.version.outputs.version }}
           generate_release_notes: true
           draft: false

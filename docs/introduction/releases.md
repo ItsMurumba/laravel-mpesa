@@ -19,10 +19,10 @@ No release is created unless the merge has already passed CI; the release workfl
 | Branch   | Trigger       | Version pattern        | Example              |
 |----------|---------------|------------------------|----------------------|
 | `develop`| Push (merge)  | `v{next}-dev.{N}`      | v1.0.9-dev.1         |
-| `main`   | Push (merge)  | `v{major}.{minor}.{patch}` (patch bump) | v1.0.9 |
+| `main`   | Push (merge)  | `v{major}.{minor}.{patch}` (patch bump unless the merge message says otherwise) | v1.0.9 |
 
-- **main:** Latest tag is read (e.g. `v1.0.8`). Next version = patch bump → `v1.0.9`. Tag and GitHub Release are created.
-- **develop:** Latest *stable* tag (e.g. `v1.0.8`) gives next base `v1.0.9`. Count existing `v1.0.9-dev.*` tags; next pre-release = `v1.0.9-dev.(count+1)`.
+- **main:** Latest *stable* tag is read (e.g. `v1.0.8`; pre-release tags are skipped). Next version = patch bump → `v1.0.9`, or a minor/major bump when the merge commit message contains `[minor]` or `[major]` (see below). Tag and GitHub Release are created on the merged commit.
+- **develop:** Latest *stable* tag (e.g. `v1.0.8`) gives next base `v1.0.9`. Count existing `v1.0.9-dev.*` tags; next pre-release = `v1.0.9-dev.(count+1)`, tagged on the merged commit.
 
 If no tag exists yet, the workflow falls back to base `v1.0.8` (so first release from main is `v1.0.9`).
 
@@ -35,13 +35,24 @@ If no tag exists yet, the workflow falls back to base `v1.0.8` (so first release
 
 Both need `contents: write` to create tags and releases.
 
+## Minor and major releases
+
+Put `[minor]` or `[major]` in the merge commit message, for example in the title of the `develop` → `main` pull request (GitHub adds the PR title to the merge commit):
+
+| Marker | From `v1.0.8` |
+|---|---|
+| none | `v1.0.9` |
+| `[minor]` | `v1.1.0` |
+| `[major]` | `v2.0.0` |
+
+Use `[minor]` for new features and `[major]` when existing code has to change to keep working.
+
 ## Skip release
 
 To merge without creating a release, include `[skip release]` in the merge commit message (e.g. "Merge PR #123 [skip release]").
 
 ## Optional later improvements
 
-- **Conventional commits:** Bump minor/major from commit messages (`feat:`, `BREAKING CHANGE:`).
 - **Changelog:** Generate release notes from commits or a CHANGELOG file.
 - **Manual trigger:** Add `workflow_dispatch` to run a release from the Actions tab.
 - **Version in composer.json:** Read version from package and tag that (instead of auto patch bump).
