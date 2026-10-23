@@ -44,7 +44,7 @@ return [
     'baseUrl' => env('MPESA_BASE_URL', 'https://sandbox.safaricom.co.ke'),
     'initiatorUsername' => env('MPESA_INITIATOR_USERNAME', ''),
     'initiatorPassword' => env('MPESA_INITIATOR_PASSWORD', ''),
-    'lipaNaMpesaShortcode' => env('MPESA_LIPA_NA_MPESA_SHORTCODE', ''),
+    'lipaNaMpesaShortcode' => env('LIPA_NA_MPESA_SHORTCODE', ''),
     'resultURL' => env('MPESA_RESULT_URL', 'https://your-domain.com/mpesa/b2b/result'),
     'queueTimeOutURL' => env('MPESA_QUEUE_TIMEOUT_URL', 'https://your-domain.com/mpesa/b2b/timeout'),
 ];
@@ -57,7 +57,7 @@ MPESA_ENVIRONMENT=sandbox
 MPESA_BASE_URL=https://sandbox.safaricom.co.ke
 MPESA_INITIATOR_USERNAME=your_initiator_username
 MPESA_INITIATOR_PASSWORD=your_initiator_password
-MPESA_LIPA_NA_MPESA_SHORTCODE=your_shortcode
+LIPA_NA_MPESA_SHORTCODE=your_shortcode
 MPESA_RESULT_URL=https://your-domain.com/mpesa/b2b/result
 MPESA_QUEUE_TIMEOUT_URL=https://your-domain.com/mpesa/b2b/timeout
 ```

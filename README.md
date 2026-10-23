@@ -71,7 +71,7 @@ Mpesa::for('tenant-id', [
 ])->expressPayment($amount, $phoneNumber);
 ```
 
-**Buy Goods tills (STK push):** set `lipaNaMpesaTransactionType` to `CustomerBuyGoodsOnline`. `BusinessShortCode` and the password use `lipaNaMpesaShortcode` and `lipaNaMpesaPasskey`, and `PartyB` is the same shortcode. If the till's passkey was issued to another shortcode (such as the store or head office number), put that number in `lipaNaMpesaShortcode` and the till in `lipaNaMpesaTillNumber`; the till is then sent as `PartyB`. Paybills need neither key.
+**Buy Goods tills (STK push):** set `lipaNaMpesaTransactionType` to `CustomerBuyGoodsOnline`. `BusinessShortCode` and the password use `lipaNaMpesaShortcode` and `lipaNaMpesaPasskey`, and `PartyB` is the same shortcode. If the till's passkey was issued to another shortcode (such as the store or head office number), put that number in `lipaNaMpesaShortcode` and the till in `lipaNaMpesaTillNumber`; the till is then sent as `PartyB`. Paybills leave both at their defaults; they still need `lipaNaMpesaShortcode` and `lipaNaMpesaPasskey`.
 
 **Errors and testing:** the access token is fetched on the first API call (not in the constructor) and reused until shortly before it expires. If it can't be obtained, `Itsmurumba\Mpesa\Exceptions\MpesaException` is thrown. All requests go through Laravel's `Http` client, so `Http::fake()` works in your tests. Daraja error responses (4xx/5xx) are returned as the raw JSON string like successful ones.
 

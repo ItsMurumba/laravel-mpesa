@@ -51,7 +51,7 @@ Make sure your `config/mpesa.php` file contains the necessary C2B settings:
 
 ```php
 return [
-    'lipaNaMpesaShortcode' => env('MPESA_LIPA_NA_MPESA_SHORTCODE'),
+    'lipaNaMpesaShortcode' => env('LIPA_NA_MPESA_SHORTCODE'),
     'confirmationURL' => env('MPESA_CONFIRMATION_URL'),
     'validationURL' => env('MPESA_VALIDATION_URL'),
     // ... other configuration
@@ -63,7 +63,7 @@ return [
 Add these to your `.env` file:
 
 ```env
-MPESA_LIPA_NA_MPESA_SHORTCODE=174379
+LIPA_NA_MPESA_SHORTCODE=174379
 MPESA_CONFIRMATION_URL=https://your-domain.com/mpesa/c2b/confirmation
 MPESA_VALIDATION_URL=https://your-domain.com/mpesa/c2b/validation
 ```
@@ -241,7 +241,7 @@ For testing purposes, use the sandbox environment:
 
 ```php
 // Use sandbox credentials
-MPESA_LIPA_NA_MPESA_SHORTCODE=174379
+LIPA_NA_MPESA_SHORTCODE=174379
 MPESA_CONFIRMATION_URL=https://your-domain.com/mpesa/c2b/confirmation
 MPESA_VALIDATION_URL=https://your-domain.com/mpesa/c2b/validation
 MPESA_BASE_URL=https://sandbox.safaricom.co.ke

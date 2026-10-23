@@ -45,7 +45,7 @@ Make sure your `config/mpesa.php` file contains the necessary B2C settings:
 return [
     'initiatorUsername' => env('MPESA_INITIATOR_USERNAME'),
     'initiatorPassword' => env('MPESA_INITIATOR_PASSWORD'),
-    'lipaNaMpesaShortcode' => env('MPESA_LIPA_NA_MPESA_SHORTCODE'),
+    'lipaNaMpesaShortcode' => env('LIPA_NA_MPESA_SHORTCODE'),
     'environment' => env('MPESA_ENVIRONMENT', 'sandbox'),
     'resultURL' => env('MPESA_RESULT_URL'),
     'queueTimeOutURL' => env('MPESA_QUEUE_TIMEOUT_URL'),
@@ -60,7 +60,7 @@ Add these to your `.env` file:
 ```env
 MPESA_INITIATOR_USERNAME=your_initiator_username
 MPESA_INITIATOR_PASSWORD=your_initiator_password
-MPESA_LIPA_NA_MPESA_SHORTCODE=174379
+LIPA_NA_MPESA_SHORTCODE=174379
 MPESA_ENVIRONMENT=sandbox
 MPESA_RESULT_URL=https://your-domain.com/mpesa/b2c/result
 MPESA_QUEUE_TIMEOUT_URL=https://your-domain.com/mpesa/b2c/timeout
@@ -235,7 +235,7 @@ For testing purposes, use the sandbox environment:
 MPESA_ENVIRONMENT=sandbox
 MPESA_INITIATOR_USERNAME=your_sandbox_initiator
 MPESA_INITIATOR_PASSWORD=your_sandbox_password
-MPESA_LIPA_NA_MPESA_SHORTCODE=174379
+LIPA_NA_MPESA_SHORTCODE=174379
 MPESA_BASE_URL=https://sandbox.safaricom.co.ke
 ```
 

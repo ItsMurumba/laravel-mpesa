@@ -2,33 +2,15 @@
 
 use Itsmurumba\Mpesa\Mpesa;
 use Itsmurumba\Mpesa\MpesaManager;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 describe('Database Profiles', function () {
     beforeEach(function () {
         if (! DB::getSchemaBuilder()->hasTable('mpesa_profiles')) {
-            DB::getSchemaBuilder()->create('mpesa_profiles', function ($table) {
-                $table->id();
-                $table->string('name')->unique();
-                $table->string('consumer_key');
-                $table->string('consumer_secret');
-                $table->string('base_url')->default('https://sandbox.safaricom.co.ke');
-                $table->string('paybill_number')->nullable();
-                $table->string('lipa_na_mpesa_shortcode')->nullable();
-                $table->string('lipa_na_mpesa_passkey')->nullable();
-                $table->string('lipa_na_mpesa_callback_url')->nullable();
-                $table->string('callback_url')->nullable();
-                $table->string('confirmation_url')->nullable();
-                $table->string('validation_url')->nullable();
-                $table->string('initiator_username')->nullable();
-                $table->text('initiator_password')->nullable();
-                $table->string('environment')->default('sandbox');
-                $table->string('queue_timeout_url')->nullable();
-                $table->string('result_url')->nullable();
-                $table->boolean('is_active')->default(true);
-                $table->timestamps();
-            });
+            (require __DIR__.'/../../../database/migrations/2025_01_28_000001_create_mpesa_profiles_table.php')->up();
         }
 
         config()->set('mpesa.use_database', true);
@@ -250,4 +232,82 @@ describe('Database Profiles', function () {
 
         expect(getProtected($mpesa, 'initiatorPassword'))->toBe('plain-password');
     });
+
+    it('keeps root defaults for fields a database profile leaves empty', function () {
+        DB::table('mpesa_profiles')->insert(dbProfile('tenant_partial', ['lipa_na_mpesa_callback_url' => null]));
+
+        (new Mpesa('tenant_partial'))->expressPayment(100, '254700000000');
+
+        expect(darajaRequests()[0]->data()['CallBackURL'])->toBe('https://example.test/stk-callback');
+    });
+
+    it('decrypts the consumer secret and passkey stored encrypted', function () {
+        DB::table('mpesa_profiles')->insert(dbProfile('tenant_encrypted', [
+            'consumer_secret' => Crypt::encryptString('db-secret'),
+            'lipa_na_mpesa_passkey' => Crypt::encryptString('db-passkey'),
+        ]));
+
+        (new Mpesa('tenant_encrypted'))->expressPayment(100, '254700000000');
+
+        $requests = Http::recorded()->map(fn ($pair) => $pair[0])->values();
+        expect($requests[0]->header('Authorization')[0])->toBe('Basic '.base64_encode('db-key:db-secret'));
+        $payload = $requests[1]->data();
+        expect($payload['Password'])->toBe(base64_encode('999999db-passkey'.$payload['Timestamp']));
+    });
+
+    it('reads the Buy Goods settings and security credential from the database profile', function () {
+        config()->set('mpesa.securityCredential', 'root-credential');
+        DB::table('mpesa_profiles')->insert(dbProfile('tenant_till', [
+            'lipa_na_mpesa_transaction_type' => 'CustomerBuyGoodsOnline',
+            'lipa_na_mpesa_till_number' => '5123456',
+            'initiator_username' => 'till-operator',
+            'security_credential' => Crypt::encryptString('till-credential'),
+        ]));
+
+        $mpesa = new Mpesa('tenant_till');
+        $mpesa->expressPayment(100, '254700000000');
+        $mpesa->reversals('QKA1B2C3D4', 100, '600000', '11', 'Refund');
+
+        $express = darajaRequests()[0]->data();
+        expect($express['TransactionType'])->toBe('CustomerBuyGoodsOnline');
+        expect($express['PartyB'])->toBe('5123456');
+        expect(darajaRequests()[1]->data()['SecurityCredential'])->toBe('till-credential');
+    });
+
+    it('surfaces database errors instead of falling back to other credentials', function () {
+        $connection = config('database.default');
+        config()->set('database.connections.unreachable', ['driver' => 'sqlite', 'database' => '/missing/mpesa.sqlite']);
+        config()->set('database.default', 'unreachable');
+
+        expect(fn () => new Mpesa('tenant_db'))->toThrow(QueryException::class);
+
+        config()->set('database.default', $connection);
+    });
+
+    it('turns database profiles on from a string env value', function () {
+        config()->set('mpesa.use_database', '1');
+        DB::table('mpesa_profiles')->insert(dbProfile('tenant_env'));
+
+        (new Mpesa('tenant_env'))->expressPayment(100, '254700000000');
+
+        expect(darajaRequests()[0]->data()['BusinessShortCode'])->toBe('999999');
+    });
 });
+
+/**
+ * A row for the `mpesa_profiles` table with working defaults.
+ */
+function dbProfile(string $name, array $overrides = []): array
+{
+    return array_merge([
+        'name' => $name,
+        'consumer_key' => 'db-key',
+        'consumer_secret' => 'db-secret',
+        'base_url' => 'https://example.test',
+        'lipa_na_mpesa_shortcode' => '999999',
+        'lipa_na_mpesa_passkey' => 'db-passkey',
+        'is_active' => true,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ], $overrides);
+}

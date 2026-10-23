@@ -150,13 +150,16 @@ class Mpesa
     /**
      * Resolve config for a given profile (supports database + config-based profiles).
      *
-     * Resolution order: root config as defaults, then database (if enabled and profile
-     * found), then config-based profiles, then overrides. Root keys 'profiles',
-     * 'default_profile' and 'use_database' are stripped from the resolved array.
+     * Resolution order: root config as defaults, then the database profile (if enabled and
+     * found) or else the config profile, then overrides. Empty database fields keep the root
+     * value. A layer that changes the initiator without its own `securityCredential` drops
+     * the inherited one, so the new initiator's password is encrypted instead.
      *
      * @param  string|null  $profile  Profile name, or null for default.
      * @param  array  $overrides  Optional key-value overrides applied last.
      * @return array
+     *
+     * @throws MpesaException When a named profile other than the default is not found and no overrides are given.
      */
     protected function resolveConfig($profile = null, array $overrides = [])
     {
@@ -165,82 +168,90 @@ class Mpesa
         $resolved = $root;
         unset($resolved['profiles'], $resolved['default_profile'], $resolved['use_database']);
 
-        $useDatabase = isset($root['use_database']) && $root['use_database'] === true;
-        $defaultProfile = isset($root['default_profile']) ? $root['default_profile'] : 'default';
+        $useDatabase = filter_var($root['use_database'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $defaultProfile = $root['default_profile'] ?? 'default';
         $profileName = $profile ?: $defaultProfile;
 
-        if ($useDatabase && $profileName) {
-            $dbProfile = $this->resolveFromDatabase($profileName);
-            if ($dbProfile) {
-                $resolved = array_merge($resolved, $dbProfile);
-            }
+        $layer = $useDatabase ? $this->resolveFromDatabase($profileName) : null;
+
+        if (! $layer && isset($root['profiles'][$profileName]) && is_array($root['profiles'][$profileName])) {
+            $layer = $root['profiles'][$profileName];
         }
 
-        if (! $useDatabase || ! isset($dbProfile) || ! $dbProfile) {
-            $profiles = [];
-            if (isset($root['profiles']) && is_array($root['profiles'])) {
-                $profiles = $root['profiles'];
-            }
-
-            if (! empty($profiles)) {
-                if (isset($profiles[$profileName]) && is_array($profiles[$profileName])) {
-                    $resolved = array_merge($resolved, $profiles[$profileName]);
-                }
-            }
+        if (! $layer && empty($overrides) && $profileName !== $defaultProfile) {
+            throw new MpesaException("M-Pesa profile [{$profileName}] was not found.");
         }
 
-        if (! empty($overrides)) {
-            $resolved = array_merge($resolved, $overrides);
+        foreach ([$layer ?: [], $overrides] as $values) {
+            $resolved = $this->mergeLayer($resolved, $values);
         }
 
         return $resolved;
     }
 
     /**
+     * Merge one layer of config over another.
+     *
+     * @param  array  $resolved
+     * @param  array  $values
+     * @return array
+     */
+    private function mergeLayer(array $resolved, array $values)
+    {
+        $changesInitiator = array_key_exists('initiatorUsername', $values) || array_key_exists('initiatorPassword', $values);
+
+        if ($changesInitiator && ! array_key_exists('securityCredential', $values)) {
+            $resolved['securityCredential'] = null;
+        }
+
+        return array_merge($resolved, $values);
+    }
+
+    /**
      * Resolve profile configuration from database.
      *
-     * Returns a config-style array (camelCase keys) or null if the table is missing,
-     * the profile is not found, or the profile is inactive.
+     * Returns a config-style array (camelCase keys) with empty fields left out, or null if the
+     * table is missing, the profile is not found, or the profile is inactive. Secrets stored
+     * with `Crypt::encryptString()` are decrypted.
      *
      * @param  string  $profileName
      * @return array|null
      */
     protected function resolveFromDatabase($profileName)
     {
-        try {
-            if (! DB::getSchemaBuilder()->hasTable('mpesa_profiles')) {
-                return null;
-            }
-
-            $profile = DB::table('mpesa_profiles')
-                ->where('name', $profileName)
-                ->where('is_active', true)
-                ->first();
-
-            if (! $profile) {
-                return null;
-            }
-
-            return [
-                'consumerKey' => $profile->consumer_key,
-                'consumerSecret' => $profile->consumer_secret,
-                'baseUrl' => $profile->base_url,
-                'paybillNumber' => $profile->paybill_number,
-                'lipaNaMpesaShortcode' => $profile->lipa_na_mpesa_shortcode,
-                'lipaNaMpesaPasskey' => $profile->lipa_na_mpesa_passkey,
-                'lipaNaMpesaCallbackURL' => $profile->lipa_na_mpesa_callback_url,
-                'callBackURL' => $profile->callback_url,
-                'confirmationURL' => $profile->confirmation_url,
-                'validationURL' => $profile->validation_url,
-                'initiatorUsername' => $profile->initiator_username,
-                'initiatorPassword' => $this->maybeDecrypt($profile->initiator_password),
-                'environment' => $profile->environment,
-                'queueTimeOutURL' => $profile->queue_timeout_url,
-                'resultURL' => $profile->result_url,
-            ];
-        } catch (\Exception $e) {
+        if (! DB::getSchemaBuilder()->hasTable('mpesa_profiles')) {
             return null;
         }
+
+        $profile = DB::table('mpesa_profiles')
+            ->where('name', $profileName)
+            ->where('is_active', true)
+            ->first();
+
+        if (! $profile) {
+            return null;
+        }
+
+        return array_filter([
+            'consumerKey' => $profile->consumer_key,
+            'consumerSecret' => $this->maybeDecrypt($profile->consumer_secret),
+            'baseUrl' => $profile->base_url,
+            'paybillNumber' => $profile->paybill_number,
+            'lipaNaMpesaShortcode' => $profile->lipa_na_mpesa_shortcode,
+            'lipaNaMpesaPasskey' => $this->maybeDecrypt($profile->lipa_na_mpesa_passkey),
+            'lipaNaMpesaCallbackURL' => $profile->lipa_na_mpesa_callback_url,
+            'lipaNaMpesaTransactionType' => $profile->lipa_na_mpesa_transaction_type,
+            'lipaNaMpesaTillNumber' => $profile->lipa_na_mpesa_till_number,
+            'callBackURL' => $profile->callback_url,
+            'confirmationURL' => $profile->confirmation_url,
+            'validationURL' => $profile->validation_url,
+            'initiatorUsername' => $profile->initiator_username,
+            'initiatorPassword' => $this->maybeDecrypt($profile->initiator_password),
+            'securityCredential' => $this->maybeDecrypt($profile->security_credential),
+            'environment' => $profile->environment,
+            'queueTimeOutURL' => $profile->queue_timeout_url,
+            'resultURL' => $profile->result_url,
+        ], fn ($value) => $value !== null && $value !== '');
     }
 
     /**
@@ -493,7 +504,7 @@ class Mpesa
      * Transaction Status Query API
      * Reversal API
      *
-     * @return void
+     * @return string
      */
     private function setSecurityCredentials()
     {
@@ -531,7 +542,7 @@ class Mpesa
      * @param [type] $phoneNumber
      * @param  string  $accountReference
      * @param  string  $transactionDescription
-     * @return void
+     * @return string
      */
     public function expressPayment($amount, $phoneNumber, $accountReference = 'CompanyXLTD', $transactionDescription = 'Payment of X')
     {
@@ -567,7 +578,7 @@ class Mpesa
      * Check the status of a Lipa Na M-Pesa Online Payment.
      *
      * @param [type] $checkoutRequestId
-     * @return void
+     * @return string
      */
     public function expressPaymentQuery($checkoutRequestId)
     {
@@ -589,7 +600,7 @@ class Mpesa
      * Customer To Business Register URL:
      * Register validation and confirmation URLs on M-Pesa
      *
-     * @return void
+     * @return string
      */
     public function c2bRegisterURLs()
     {
@@ -612,7 +623,7 @@ class Mpesa
      * @param [type] $amount
      * @param [type] $phoneNumber
      * @param [type] $billRefNumber
-     * @return void
+     * @return string
      */
     public function c2bPayment($commandId, $amount, $phoneNumber, $billRefNumber)
     {
@@ -638,7 +649,7 @@ class Mpesa
      * @param [type] $phoneNumber
      * @param [type] $remarks
      * @param  string  $occassion
-     * @return void
+     * @return string
      */
     public function b2cPayment($commandId, $amount, $phoneNumber, $remarks, $occassion = '')
     {
@@ -669,7 +680,7 @@ class Mpesa
      * @param [type] $identifierType
      * @param [type] $remarks
      * @param  string  $occassion
-     * @return void
+     * @return string
      */
     public function transactionStatus($transactionId, $identifierType, $remarks, $occassion = '')
     {
@@ -697,7 +708,7 @@ class Mpesa
      *
      * @param [type] $identifierType
      * @param [type] $remarks
-     * @return void
+     * @return string
      */
     public function accountBalance($identifierType, $remarks)
     {
@@ -727,7 +738,7 @@ class Mpesa
      * @param [type] $receiverIdentifierType
      * @param [type] $remarks
      * @param  string  $occasion
-     * @return void
+     * @return string
      */
     public function reversals($transactionId, $amount, $receiverParty, $receiverIdentifierType, $remarks, $occasion = '')
     {
@@ -760,7 +771,7 @@ class Mpesa
      * @param [type] $receiverShortcode
      * @param [type] $accountReference
      * @param [type] $remarks
-     * @return void
+     * @return string
      */
     public function b2bPayment($commandId, $amount, $receiverShortcode, $accountReference, $remarks)
     {
