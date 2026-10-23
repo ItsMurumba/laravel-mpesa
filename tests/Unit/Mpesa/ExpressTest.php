@@ -1,5 +1,6 @@
 <?php
 
+use Itsmurumba\Mpesa\Exceptions\MpesaException;
 use Itsmurumba\Mpesa\Mpesa;
 use Itsmurumba\Mpesa\MpesaManager;
 
@@ -35,10 +36,31 @@ describe('Mpesa Express (STK Push)', function () {
         ]);
     });
 
-    it('pays a Buy Goods till through for() overrides', function () {
+    it('pays a till that is its own shortcode, with PartyB the same as BusinessShortCode', function () {
+        (new MpesaManager())->for('tenant-y', [
+            'lipaNaMpesaShortcode' => '5566778',
+            'lipaNaMpesaPasskey' => 'till-passkey',
+            'lipaNaMpesaTransactionType' => 'CustomerBuyGoodsOnline',
+        ])->expressPayment(50, '254711111111');
+
+        $payload = darajaRequests()[0]->data();
+        expect($payload['TransactionType'])->toBe('CustomerBuyGoodsOnline');
+        expect($payload['BusinessShortCode'])->toBe('5566778');
+        expect($payload['PartyB'])->toBe('5566778');
+    });
+
+    it('rejects a transaction type Daraja does not accept, before sending anything', function () {
+        expect(fn () => (new MpesaManager())->for('tenant-z', [
+            'lipaNaMpesaTransactionType' => 'CustomerBuyGoods',
+        ])->expressPayment(50, '254711111111'))->toThrow(MpesaException::class);
+
+        expect(darajaRequests())->toHaveCount(0);
+    });
+
+    it('pays a till whose passkey was issued to another shortcode, with the till as PartyB', function () {
         (new MpesaManager())->for('tenant-x', [
             'lipaNaMpesaShortcode' => '174379',
-            'lipaNaMpesaPasskey' => 'store-passkey',
+            'lipaNaMpesaPasskey' => 'head-office-passkey',
             'lipaNaMpesaTransactionType' => 'CustomerBuyGoodsOnline',
             'lipaNaMpesaTillNumber' => '5566778',
         ])->expressPayment(50, '254711111111');
@@ -47,6 +69,6 @@ describe('Mpesa Express (STK Push)', function () {
         expect($payload['TransactionType'])->toBe('CustomerBuyGoodsOnline');
         expect($payload['BusinessShortCode'])->toBe('174379');
         expect($payload['PartyB'])->toBe('5566778');
-        expect($payload['Password'])->toBe(base64_encode('174379' . 'store-passkey' . $payload['Timestamp']));
+        expect($payload['Password'])->toBe(base64_encode('174379' . 'head-office-passkey' . $payload['Timestamp']));
     });
 });

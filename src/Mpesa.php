@@ -518,8 +518,14 @@ class Mpesa
      * Mpesa Express: Initiates online payment on behalf of a customer.
      *
      * Paybill by default. For a Buy Goods till set `lipaNaMpesaTransactionType` to
-     * `CustomerBuyGoodsOnline` and `lipaNaMpesaTillNumber` to the till; `lipaNaMpesaShortcode`
-     * and `lipaNaMpesaPasskey` then hold the store (head office) number and its passkey.
+     * `CustomerBuyGoodsOnline` (Daraja's values: `CustomerPayBillOnline` for paybills,
+     * `CustomerBuyGoodsOnline` for tills). `BusinessShortCode` and the password always use
+     * `lipaNaMpesaShortcode` and `lipaNaMpesaPasskey`. `PartyB`, who receives the money, is
+     * the same shortcode unless `lipaNaMpesaTillNumber` is set, for a till whose passkey was
+     * issued to another shortcode. Daraja limits `AccountReference` to 12 characters and
+     * `TransactionDesc` to 13.
+     *
+     * @throws MpesaException When the transaction type isn't one Daraja accepts.
      *
      * @param [type] $amount
      * @param [type] $phoneNumber
@@ -529,13 +535,19 @@ class Mpesa
      */
     public function expressPayment($amount, $phoneNumber, $accountReference = 'CompanyXLTD', $transactionDescription = 'Payment of X')
     {
+        $transactionType = $this->configValue('lipaNaMpesaTransactionType') ?: 'CustomerPayBillOnline';
+
+        if (! in_array($transactionType, ['CustomerPayBillOnline', 'CustomerBuyGoodsOnline'], true)) {
+            throw new MpesaException("Unsupported M-Pesa Express transaction type [{$transactionType}]: use CustomerPayBillOnline or CustomerBuyGoodsOnline.");
+        }
+
         $timestamp = date('YmdHis');
 
         $arrayData = [
             'BusinessShortCode' => $this->lipaNaMpesaShortcode,
             'Password' => base64_encode($this->lipaNaMpesaShortcode . $this->lipaNaMpesaPasskey . $timestamp),
             'Timestamp' => $timestamp,
-            'TransactionType' => $this->configValue('lipaNaMpesaTransactionType') ?: 'CustomerPayBillOnline',
+            'TransactionType' => $transactionType,
             'Amount' => $amount,
             'PartyA' => $phoneNumber,
             'PartyB' => $this->configValue('lipaNaMpesaTillNumber') ?: $this->lipaNaMpesaShortcode,

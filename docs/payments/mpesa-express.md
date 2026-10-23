@@ -129,12 +129,22 @@ $arrayData = [
 
 ### Buy Goods Tills
 
-STK push to a till uses the `CustomerBuyGoodsOnline` transaction type. `BusinessShortCode` and the password use the store (head office) number and its passkey, and `PartyB` is the till number:
+Daraja's `TransactionType` is `CustomerPayBillOnline` for paybills and `CustomerBuyGoodsOnline` for tills. `BusinessShortCode` is the organisation's shortcode (paybill or Buy Goods), the password is `base64(BusinessShortCode + Passkey + Timestamp)`, and `PartyB`, who receives the money, can be the same as `BusinessShortCode`.
+
+A till with its own passkey only needs the transaction type:
 
 ```env
 LIPA_NA_MPESA_TRANSACTION_TYPE=CustomerBuyGoodsOnline
-LIPA_NA_MPESA_SHORTCODE=xxxxxx      # store / head office number
-LIPA_NA_MPESA_PASSKEY=xxxxxxxx      # passkey for the store number
+LIPA_NA_MPESA_SHORTCODE=xxxxxx      # the till
+LIPA_NA_MPESA_PASSKEY=xxxxxxxx      # its passkey
+```
+
+If Safaricom issued the passkey to another shortcode (such as the store or head office number), that number signs the request and the till receives the money as `PartyB`:
+
+```env
+LIPA_NA_MPESA_TRANSACTION_TYPE=CustomerBuyGoodsOnline
+LIPA_NA_MPESA_SHORTCODE=xxxxxx      # shortcode the passkey was issued to
+LIPA_NA_MPESA_PASSKEY=xxxxxxxx      # its passkey
 LIPA_NA_MPESA_TILL_NUMBER=xxxxxx    # till that receives the money
 ```
 
@@ -143,11 +153,13 @@ Or per call:
 ```php
 Mpesa::for('tenant-id', [
     'lipaNaMpesaTransactionType' => 'CustomerBuyGoodsOnline',
-    'lipaNaMpesaShortcode' => $storeNumber,
+    'lipaNaMpesaShortcode' => $shortcode,
     'lipaNaMpesaPasskey' => $passkey,
-    'lipaNaMpesaTillNumber' => $tillNumber,
+    'lipaNaMpesaTillNumber' => $tillNumber, // only when it differs from the shortcode
 ])->expressPayment(100, '254700000000');
 ```
+
+Any other transaction type throws `Itsmurumba\Mpesa\Exceptions\MpesaException` before a request is sent. Daraja limits `AccountReference` to 12 characters and `TransactionDesc` to 13.
 
 ### Querying Payment Status
 

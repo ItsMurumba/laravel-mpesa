@@ -114,9 +114,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | `CustomerPayBillOnline` for a paybill (default) or `CustomerBuyGoodsOnline`
-    | for a Buy Goods till. For a till, `lipaNaMpesaShortcode` and
-    | `lipaNaMpesaPasskey` are the store (head office) number and its passkey,
-    | and `lipaNaMpesaTillNumber` is the till that receives the money.
+    | for a Buy Goods till, as Daraja defines them. `BusinessShortCode` and the
+    | password always use `lipaNaMpesaShortcode` and `lipaNaMpesaPasskey`.
     |
     */
     'lipaNaMpesaTransactionType' => env('LIPA_NA_MPESA_TRANSACTION_TYPE', 'CustomerPayBillOnline'),
@@ -126,8 +125,10 @@ return [
     | Lipa na Mpesa Till Number
     |--------------------------------------------------------------------------
     |
-    | The till sent as `PartyB` in STK push. Leave empty for a paybill, where
-    | `PartyB` is the shortcode.
+    | Sent as `PartyB` in STK push, the shortcode that receives the money.
+    | Leave empty when that's `lipaNaMpesaShortcode` itself (every paybill, and a
+    | till with its own passkey). Set it when the till's passkey was issued to
+    | another shortcode, such as the store or head office number.
     |
     */
     'lipaNaMpesaTillNumber' => env('LIPA_NA_MPESA_TILL_NUMBER'),
