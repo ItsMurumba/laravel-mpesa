@@ -6,8 +6,10 @@ Laravel package for the Safaricom M-Pesa Daraja API. Supports C2B, B2C, B2B, M-P
 
 ## Requirements
 
-- PHP 7.1+
-- Laravel 5.0+ (Laravel 8+ recommended; tested on 11, 12 and 13)
+- PHP 8.2+
+- Laravel 11, 12 or 13 (tested on 12 and 13)
+
+On an older Laravel or PHP version, use 1.x (`composer require itsmurumba/laravel-mpesa:^1.0`). Upgrading from 1.x? See the [upgrade guide](https://mpesa.itsmurumba.dev/introduction/upgrading).
 - [Composer](https://getcomposer.org/)
 
 ## Installation
@@ -20,12 +22,6 @@ Publish the config file:
 
 ```bash
 php artisan vendor:publish --provider="Itsmurumba\Mpesa\MpesaServiceProvider" --tag=mpesa-config
-```
-
-For Laravel 5.4 and below, register the service provider in `config/app.php`:
-
-```php
-Itsmurumba\Mpesa\MpesaServiceProvider::class
 ```
 
 ## Configuration

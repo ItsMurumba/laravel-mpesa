@@ -46,7 +46,7 @@ This guide will walk you through the complete setup process, from installation t
 
 Before you begin, ensure you have:
 
-- **Laravel Application**: A Laravel application (see [composer.json](https://github.com/ItsMurumba/laravel-mpesa/blob/main/composer.json) for supported versions; Laravel 8+ recommended)
+- **Laravel Application**: Laravel 11, 12 or 13 on PHP 8.2+ (older versions: use 1.x, see [Upgrading to 2.0](/introduction/upgrading))
 - **Composer**: PHP package manager installed
 - **M-Pesa Daraja Account**: Active Safaricom Daraja API account
 - **API Credentials**: Consumer key, consumer secret, and other required credentials
