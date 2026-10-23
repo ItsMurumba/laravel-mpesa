@@ -21,8 +21,8 @@ No release is created unless the merge has already passed CI; the release workfl
 | `develop`| Push (merge)  | `v{next}-dev.{N}`      | v1.0.9-dev.1         |
 | `main`   | Push (merge)  | `v{major}.{minor}.{patch}` (patch bump unless the merge message says otherwise) | v1.0.9 |
 
-- **main:** Latest *stable* tag is read (e.g. `v1.0.8`; pre-release tags are skipped). Next version = patch bump → `v1.0.9`, or a minor/major bump when the merge commit message contains `[minor]` or `[major]` (see below). Tag and GitHub Release are created on the merged commit.
-- **develop:** Latest *stable* tag (e.g. `v1.0.8`) gives next base `v1.0.9`. Count existing `v1.0.9-dev.*` tags; next pre-release = `v1.0.9-dev.(count+1)`, tagged on the merged commit.
+- **main:** Latest *stable* `vX.Y.Z` tag is read (e.g. `v1.0.8`; pre-release tags such as `v1.0.9-dev.1` or `v2.0.0-rc.1` are skipped). Next version = patch bump → `v1.0.9`, or a minor/major bump when the merge commit message contains `[minor]` or `[major]` (see below). Tag and GitHub Release are created on the merged commit.
+- **develop:** Latest *stable* tag (e.g. `v1.0.8`) gives next base `v1.0.9`. The next pre-release is one past the highest existing `v1.0.9-dev.N`, tagged on the merged commit.
 
 If no tag exists yet, the workflow falls back to base `v1.0.8` (so first release from main is `v1.0.9`).
 
@@ -46,6 +46,10 @@ Put `[minor]` or `[major]` in the merge commit message, for example in the title
 | `[major]` | `v2.0.0` |
 
 Use `[minor]` for new features and `[major]` when existing code has to change to keep working.
+
+## Release candidates
+
+To try a release before it goes to `main`, tag the `develop` commit as a GitHub pre-release by hand, for example `v2.0.0-rc.1`, and install it with `composer require itsmurumba/laravel-mpesa:2.0.0-rc.1`. The release workflows ignore these tags when they work out the next version.
 
 ## Skip release
 
