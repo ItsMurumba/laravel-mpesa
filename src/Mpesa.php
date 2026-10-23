@@ -2,14 +2,15 @@
 
 namespace Itsmurumba\Mpesa;
 
-use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
+use Illuminate\Http\Client\ConnectionException;
 use Itsmurumba\Mpesa\Exceptions\IsNullException;
+use Itsmurumba\Mpesa\Exceptions\MpesaException;
 
 class Mpesa
 {
@@ -32,11 +33,6 @@ class Mpesa
      * Consumer Secret from the app on developer.safaricom.co.ke
      */
     protected $consumerSecret;
-
-    /**
-     * Instance of Client
-     */
-    protected $client;
 
     /**
      * Mpesa API base URL
@@ -64,9 +60,9 @@ class Mpesa
     protected $accessToken;
 
     /**
-     * Expiry time for the access token (datetime string or timestamp).
+     * Unix timestamp after which the access token is treated as expired.
      *
-     * @var string|int
+     * @var int|null
      */
     protected $expiresIn;
 
@@ -149,7 +145,6 @@ class Mpesa
         $this->setEnvironment();
         $this->setQueueTimeOutURL();
         $this->setResultURL();
-        $this->setRequestOptions();
     }
 
     /**
@@ -419,85 +414,80 @@ class Mpesa
     }
 
     /**
-     * Set options for making the Client requests.
-     */
-    private function setRequestOptions()
-    {
-
-        if (isset($this->accessToken) && strtotime($this->expiresIn) > time()) {
-            $accessToken = $this->accessToken;
-        } else {
-            $accessToken = $this->getAccessToken();
-        }
-
-        $authBearer = 'Bearer ' . $accessToken;
-
-        $this->client = new Client(
-            [
-                'base_uri' => $this->baseUrl,
-                'headers' => [
-                    'Authorization' => $authBearer,
-                    'Content-Type' => 'application/json',
-                ],
-            ]
-        );
-    }
-
-    /**
-     * setHttpResponse to handle all the API request responses
+     * Send a request to Daraja through Laravel's Http client, so it can be faked in tests.
      *
-     * @param [type] $relativeUrl
-     * @param [type] $method
-     * @param  array  $body
-     * @return void
+     * @param  string  $relativeUrl  Path relative to the base URL.
+     * @param  string|null  $method  HTTP method.
+     * @param  array  $data  JSON body.
+     * @return string The raw response body (Daraja's JSON, including error responses).
+     *
+     * @throws IsNullException When no method is given.
+     * @throws MpesaException When no access token can be obtained.
      */
     private function setHttpResponse($relativeUrl, $method, $data)
     {
-
         if (is_null($method)) {
             throw new IsNullException('Empty method not allowed');
         }
 
-        $response = $this->client->{strtolower($method)}(
-            $this->baseUrl . $relativeUrl,
-            [
-                'body' => json_encode($data),
-            ]
-        );
-
-        return $response->getBody()->getContents();
+        return Http::withToken($this->accessToken())
+            ->asJson()
+            ->send(strtoupper($method), $this->baseUrl . $relativeUrl, ['json' => $data])
+            ->body();
     }
 
     /**
-     * Get Access Token to be used in allowed API requests
+     * Get a valid access token, fetching a new one only when none is held or it is about to expire.
+     *
+     * @return string
+     *
+     * @throws MpesaException
+     */
+    private function accessToken()
+    {
+        if ($this->accessToken && $this->expiresIn > time()) {
+            return $this->accessToken;
+        }
+
+        return $this->getAccessToken();
+    }
+
+    /**
+     * Fetch a new access token from Daraja's OAuth endpoint.
+     *
+     * The token is held until 60 seconds before Daraja's `expires_in`.
+     *
+     * @return string
+     *
+     * @throws MpesaException When the request fails or the response has no token.
      */
     private function getAccessToken()
     {
-        /** @var \Illuminate\Http\Client\Response $response */
-        $response = Http::withHeaders([
-            'Authorization' => 'Basic ' . base64_encode($this->consumerKey . ':' . $this->consumerSecret),
-        ])->get(
-            $this->baseUrl . '/oauth/v1/generate?grant_type=client_credentials'
-        );
-
-        if ($response->successful()) {
-            $data = $response->object();
-
-            if (! $data || empty($data->access_token) || empty($data->expires_in)) {
-                return false;
-            }
-
-            $this->expiresIn = date('Y-m-d H:i:s', (time() + (int) $data->expires_in));
-            $this->accessToken = (string) $data->access_token;
-
-            return $data->access_token;
-        } else {
-            return false;
+        try {
+            /** @var \Illuminate\Http\Client\Response $response */
+            $response = Http::withHeaders([
+                'Authorization' => 'Basic ' . base64_encode($this->consumerKey . ':' . $this->consumerSecret),
+            ])->get($this->baseUrl . '/oauth/v1/generate?grant_type=client_credentials');
+        } catch (ConnectionException $e) {
+            throw new MpesaException('Could not obtain an M-Pesa access token: ' . $e->getMessage(), 0, $e);
         }
+
+        $data = $response->object();
+
+        if (! $response->successful() || ! $data || empty($data->access_token) || empty($data->expires_in)) {
+            throw new MpesaException('Could not obtain an M-Pesa access token (HTTP ' . $response->status() . ').');
+        }
+
+        $this->accessToken = (string) $data->access_token;
+        $this->expiresIn = time() + (int) $data->expires_in - 60;
+
+        return $this->accessToken;
     }
 
     /**
-     * Encryption of Security credentials to be used in the following API calls:
+     * Security credential for the following API calls. Uses the pre-encrypted `securityCredential`
+     * config value when set (e.g. one generated on the Daraja portal), otherwise encrypts the
+     * initiator password with Safaricom's public certificate:
      * B2C
      * B2B
      * Transaction Status Query API
@@ -507,6 +497,10 @@ class Mpesa
      */
     private function setSecurityCredentials()
     {
+        if ($securityCredential = $this->configValue('securityCredential')) {
+            return $securityCredential;
+        }
+
         if ($this->environment == 'production') {
             $publicKey = File::get(__DIR__ . '/certificates/production.cer');
         } else {
@@ -523,6 +517,16 @@ class Mpesa
     /**
      * Mpesa Express: Initiates online payment on behalf of a customer.
      *
+     * Paybill by default. For a Buy Goods till set `lipaNaMpesaTransactionType` to
+     * `CustomerBuyGoodsOnline` (Daraja's values: `CustomerPayBillOnline` for paybills,
+     * `CustomerBuyGoodsOnline` for tills). `BusinessShortCode` and the password always use
+     * `lipaNaMpesaShortcode` and `lipaNaMpesaPasskey`. `PartyB`, who receives the money, is
+     * the same shortcode unless `lipaNaMpesaTillNumber` is set, for a till whose passkey was
+     * issued to another shortcode. Daraja limits `AccountReference` to 12 characters and
+     * `TransactionDesc` to 13.
+     *
+     * @throws MpesaException When the transaction type isn't one Daraja accepts.
+     *
      * @param [type] $amount
      * @param [type] $phoneNumber
      * @param  string  $accountReference
@@ -531,16 +535,22 @@ class Mpesa
      */
     public function expressPayment($amount, $phoneNumber, $accountReference = 'CompanyXLTD', $transactionDescription = 'Payment of X')
     {
+        $transactionType = $this->configValue('lipaNaMpesaTransactionType') ?: 'CustomerPayBillOnline';
+
+        if (! in_array($transactionType, ['CustomerPayBillOnline', 'CustomerBuyGoodsOnline'], true)) {
+            throw new MpesaException("Unsupported M-Pesa Express transaction type [{$transactionType}]: use CustomerPayBillOnline or CustomerBuyGoodsOnline.");
+        }
+
         $timestamp = date('YmdHis');
 
         $arrayData = [
             'BusinessShortCode' => $this->lipaNaMpesaShortcode,
             'Password' => base64_encode($this->lipaNaMpesaShortcode . $this->lipaNaMpesaPasskey . $timestamp),
             'Timestamp' => $timestamp,
-            'TransactionType' => 'CustomerPayBillOnline',
+            'TransactionType' => $transactionType,
             'Amount' => $amount,
             'PartyA' => $phoneNumber,
-            'PartyB' => $this->lipaNaMpesaShortcode,
+            'PartyB' => $this->configValue('lipaNaMpesaTillNumber') ?: $this->lipaNaMpesaShortcode,
             'PhoneNumber' => $phoneNumber,
             'CallBackURL' => $this->lipaNaMpesaCallbackURL,
             'AccountReference' => $accountReference,

@@ -9,15 +9,18 @@ use Itsmurumba\Mpesa\MpesaServiceProvider;
 abstract class TestCase extends Orchestra
 {
     /**
-     * Fakes HTTP so Mpesa can be constructed without making real OAuth calls.
+     * Fakes Daraja: the OAuth endpoint returns a token, every other endpoint returns
+     * `{"ok": true}`, and any unfaked request fails the test.
      */
     protected function setUp(): void
     {
         parent::setUp();
 
         Http::fake([
-            '*' => Http::response(['access_token' => 'test-token', 'expires_in' => 3599], 200),
+            '*/oauth/v1/generate*' => Http::response(['access_token' => 'test-token', 'expires_in' => 3599], 200),
+            '*' => Http::response(['ok' => true], 200),
         ]);
+        Http::preventStrayRequests();
     }
 
     protected function getPackageProviders($app)

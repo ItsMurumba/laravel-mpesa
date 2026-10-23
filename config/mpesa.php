@@ -110,6 +110,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Lipa na Mpesa Transaction Type
+    |--------------------------------------------------------------------------
+    |
+    | `CustomerPayBillOnline` for a paybill (default) or `CustomerBuyGoodsOnline`
+    | for a Buy Goods till, as Daraja defines them. `BusinessShortCode` and the
+    | password always use `lipaNaMpesaShortcode` and `lipaNaMpesaPasskey`.
+    |
+    */
+    'lipaNaMpesaTransactionType' => env('LIPA_NA_MPESA_TRANSACTION_TYPE', 'CustomerPayBillOnline'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Lipa na Mpesa Till Number
+    |--------------------------------------------------------------------------
+    |
+    | Sent as `PartyB` in STK push, the shortcode that receives the money.
+    | Leave empty when that's `lipaNaMpesaShortcode` itself (every paybill, and a
+    | till with its own passkey). Set it when the till's passkey was issued to
+    | another shortcode, such as the store or head office number.
+    |
+    */
+    'lipaNaMpesaTillNumber' => env('LIPA_NA_MPESA_TILL_NUMBER'),
+
+    /*
+    |--------------------------------------------------------------------------
     | C2B Confirmation URL
     |--------------------------------------------------------------------------
     |
@@ -147,6 +172,18 @@ return [
     |
     */
     'initiatorPassword' => env('MPESA_INITIATOR_PASSWORD'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mpesa Security Credential
+    |--------------------------------------------------------------------------
+    |
+    | Optional pre-encrypted security credential (e.g. generated on the Daraja
+    | portal). When set it is sent as-is instead of encrypting the initiator
+    | password with Safaricom's certificate.
+    |
+    */
+    'securityCredential' => env('MPESA_SECURITY_CREDENTIAL'),
 
     /*
     |--------------------------------------------------------------------------
@@ -201,10 +238,13 @@ return [
             'lipaNaMpesaShortcode' => env('LIPA_NA_MPESA_SHORTCODE'),
             'lipaNaMpesaCallbackURL' => env('LIPA_NA_MPESA_CALLBACK_URL'),
             'lipaNaMpesaPasskey' => env('LIPA_NA_MPESA_PASSKEY'),
+            'lipaNaMpesaTransactionType' => env('LIPA_NA_MPESA_TRANSACTION_TYPE', 'CustomerPayBillOnline'),
+            'lipaNaMpesaTillNumber' => env('LIPA_NA_MPESA_TILL_NUMBER'),
             'confirmationURL' => env('MPESA_CONFIRMATION_URL'),
             'validationURL' => env('MPESA_VALIDATION_URL'),
             'initiatorUsername' => env('MPESA_INITIATOR_USERNAME'),
             'initiatorPassword' => env('MPESA_INITIATOR_PASSWORD'),
+            'securityCredential' => env('MPESA_SECURITY_CREDENTIAL'),
             'environment' => env('MPESA_ENVIRONMENT', 'sandbox'),
             'queueTimeOutURL' => env('MPESA_QUEUE_TIMEOUT_URL'),
             'resultURL' => env('MPESA_RESULT_URL'),

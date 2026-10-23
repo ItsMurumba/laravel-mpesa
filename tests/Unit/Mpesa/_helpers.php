@@ -1,34 +1,19 @@
 <?php
 
 use Illuminate\Http\Client\Factory as HttpFactory;
+use Illuminate\Support\Facades\Http;
 
-function makeFakeGuzzleClient(array &$calls): object
+/**
+ * Requests sent to Daraja through the faked Http client, excluding OAuth token calls.
+ *
+ * @return array<int, \Illuminate\Http\Client\Request>
+ */
+function darajaRequests(): array
 {
-    return new class($calls) {
-        public array $calls = [];
-
-        public function __construct(&$calls)
-        {
-            $this->calls = &$calls;
-        }
-
-        public function post(string $url, array $options)
-        {
-            $this->calls[] = ['method' => 'post', 'url' => $url, 'options' => $options];
-
-            return new class {
-                public function getBody()
-                {
-                    return new class {
-                        public function getContents()
-                        {
-                            return json_encode(['ok' => true]);
-                        }
-                    };
-                }
-            };
-        }
-    };
+    return Http::recorded(fn ($request) => ! str_contains($request->url(), '/oauth/'))
+        ->map(fn ($pair) => $pair[0])
+        ->values()
+        ->all();
 }
 
 /**
